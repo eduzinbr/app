@@ -43,27 +43,21 @@ jobs:
         run: |
           mkdir -p android/app/src/main/java/com/starcord/app
 
-          # Cria o MainActivity.kt completo com tratamento de permissões e WebChromeClient
-          cat << 'EOF' > android/app/src/main/java/com/starcord/app/MainActivity.kt
+          # 1. Cria o RequestPermissionFragment.kt
+          cat << 'EOF' > android/app/src/main/java/com/starcord/app/RequestPermissionFragment.kt
           package com.starcord.app
 
           import android.Manifest
-          import android.content.Intent
           import android.content.pm.PackageManager
-          import android.net.Uri
           import android.os.Build
           import android.os.Bundle
-          import android.provider.Settings
-          import android.webkit.JavascriptInterface
-          import android.webkit.PermissionRequest
-          import android.webkit.WebChromeClient
-          import android.widget.Toast
           import androidx.activity.result.contract.ActivityResultContracts
           import androidx.core.content.ContextCompat
-          import com.getcapacitor.BridgeActivity
+          import androidx.fragment.app.Fragment
           import java.io.File
 
-          class MainActivity : BridgeActivity() {
+          class RequestPermissionFragment : Fragment() {
+
               private val requiredPermissions: Array<String>
                   get() {
                       return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -84,57 +78,73 @@ jobs:
                       }
                   }
 
-              private val requestPermissionLauncher =
-                  registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-                      val allGranted = permissions.entries.all { it.value }
-                      if (allGranted) {
-                          criarPastaMidiaStarCord()
-                          Toast.makeText(this, "Permissões concedidas com sucesso!", Toast.LENGTH_SHORT).show()
-                      } else {
-                          Toast.makeText(this, "Permissões negadas. Ative nas Configurações do App.", Toast.LENGTH_LONG).show()
-                      }
+              private val permissionLauncher = registerForActivityResult(
+                  ActivityResultContracts.RequestMultiplePermissions()
+              ) { permissions ->
+                  val allGranted = permissions.entries.all { it.value }
+                  if (allGranted) {
+                      criarPastaMidiaStarCord()
                   }
+                  parentFragmentManager.beginTransaction().remove(this).commit()
+              }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
-                  
-                  bridge.webView.webChromeClient = object : WebChromeClient() {
-                      override fun onPermissionRequest(request: PermissionRequest?) {
-                          val hasCamera = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                          val hasAudio = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-
-                          if (hasCamera || hasAudio) {
-                              request?.grant(request.resources)
-                          } else {
-                              request?.deny()
-                              runOnUiThread { verificarESolicitarPermissoes() }
-                          }
-                      }
-                  }
-
-                  bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
-                  
-                  bridge.webView.postDelayed({
-                      verificarESolicitarPermissoes()
-                  }, 800)
+                  verificarESolicitar()
               }
 
-              private fun verificarESolicitarPermissoes() {
-                  val missingPermissions = requiredPermissions.filter {
-                      ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+              private fun verificarESolicitar() {
+                  val missing = requiredPermissions.filter {
+                      ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
                   }
-
-                  if (missingPermissions.isNotEmpty()) {
-                      requestPermissionLauncher.launch(missingPermissions.toTypedArray())
+                  if (missing.isNotEmpty()) {
+                      permissionLauncher.launch(missing.toTypedArray())
                   } else {
                       criarPastaMidiaStarCord()
+                      parentFragmentManager.beginTransaction().remove(this).commit()
                   }
               }
 
               private fun criarPastaMidiaStarCord() {
-                  val mediaDir = File(getExternalFilesDir(null), "midia/starcord")
+                  val mediaDir = File(requireContext().getExternalFilesDir(null), "midia/starcord")
                   if (!mediaDir.exists()) {
                       mediaDir.mkdirs()
+                  }
+              }
+          }
+          EOF
+
+          # 2. Cria o MainActivity.kt integrando o WebChromeClient e o Fragmento de Permissões
+          cat << 'EOF' > android/app/src/main/java/com/starcord/app/MainActivity.kt
+          package com.starcord.app
+
+          import android.content.Intent
+          import android.net.Uri
+          import android.os.Bundle
+          import android.provider.Settings
+          import android.webkit.JavascriptInterface
+          import android.webkit.PermissionRequest
+          import android.webkit.WebChromeClient
+          import com.getcapacitor.BridgeActivity
+
+          class MainActivity : BridgeActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  
+                  // Libera o acesso de mídia na WebView do Capacitor
+                  bridge.webView.webChromeClient = object : WebChromeClient() {
+                      override fun onPermissionRequest(request: PermissionRequest?) {
+                          request?.grant(request.resources)
+                      }
+                  }
+
+                  bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
+
+                  // Dispara o Fragmento para solicitar as permissões nativas ao abrir
+                  if (savedInstanceState == null) {
+                      supportFragmentManager.beginTransaction()
+                          .add(RequestPermissionFragment(), "RequestPermissionFragment")
+                          .commit()
                   }
               }
 
@@ -162,7 +172,9 @@ jobs:
                   @JavascriptInterface
                   fun requestMediaPermissions() {
                       activity.runOnUiThread {
-                          activity.verificarESolicitarPermissoes()
+                          activity.supportFragmentManager.beginTransaction()
+                              .add(RequestPermissionFragment(), "RequestPermissionFragment")
+                              .commit()
                       }
                   }
 
@@ -179,7 +191,7 @@ jobs:
           }
           EOF
 
-          # Cria o FloatingService.kt atualizado para StarCord
+          # 3. Cria o FloatingService.kt atualizado para StarCord
           cat << 'EOF' > android/app/src/main/java/com/starcord/app/FloatingService.kt
           package com.starcord.app
 
