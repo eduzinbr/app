@@ -1,7 +1,7 @@
 {
-  "name": "starcord-floating-app",
+  "name": "chess-ch-app",
   "version": "1.0.0",
-  "description": "App StarCord para Android",
+  "description": "App The Chess para Android",
   "main": "index.js",
   "scripts": {
     "build": "echo 'No build step required for static www'",
