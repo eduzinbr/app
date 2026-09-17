@@ -33,7 +33,7 @@ jobs:
       - name: Copy Root res/ Folder and Fix Icons
         run: |
           if [ -d "res" ]; then
-            echo "Removendo ícones adaptativos padrão do Capacitor para evitar conflito..."
+            echo "Removendo ícones adaptativos padrão do Capacitor..."
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             
             echo "Copiando pasta res/ da raiz para o projeto Android..."
@@ -41,6 +41,51 @@ jobs:
           else
             echo "Pasta res/ não encontrada na raiz, ignorando..."
           fi
+
+      - name: Inject AndroidManifest.xml with All Permissions
+        run: |
+          cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+              <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+
+                  <activity
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+                      android:name=".MainActivity"
+                      android:label="@string/title_activity_main"
+                      android:exported="true"
+                      android:theme="@style/AppTheme.NoActionBar">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <service
+                      android:name=".FloatingService"
+                      android:exported="false" />
+              </application>
+          </manifest>
+          EOF
 
       - name: Inject Custom Kotlin Files
         run: |
@@ -117,7 +162,7 @@ jobs:
           }
           EOF
 
-          # 2. Cria o MainActivity.kt integrando o WebChromeClient e o Fragmento de Permissões
+          # 2. Cria o MainActivity.kt
           cat << 'EOF' > android/app/src/main/java/com/starcord/app/MainActivity.kt
           package com.starcord.app
 
@@ -134,7 +179,6 @@ jobs:
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   
-                  // Libera o acesso de mídia na WebView do Capacitor
                   bridge.webView.webChromeClient = object : WebChromeClient() {
                       override fun onPermissionRequest(request: PermissionRequest?) {
                           request?.grant(request.resources)
@@ -143,7 +187,6 @@ jobs:
 
                   bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
 
-                  // Dispara o Fragmento para solicitar as permissões nativas ao abrir
                   if (savedInstanceState == null) {
                       supportFragmentManager.beginTransaction()
                           .add(RequestPermissionFragment(), "RequestPermissionFragment")
@@ -194,7 +237,7 @@ jobs:
           }
           EOF
 
-          # 3. Cria o FloatingService.kt atualizado para StarCord
+          # 3. Cria o FloatingService.kt
           cat << 'EOF' > android/app/src/main/java/com/starcord/app/FloatingService.kt
           package com.starcord.app
 
