@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Starcord</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0b0e;
+      --bg-panel: #13131a;
+      --bg-card: #181824;
+      --bg-hover: #222230;
+      --bg-input: #1c1c28;
+      --accent-red: #e50914;
+      --accent-red-hover: #ff1e27;
+      --accent-red-glow: rgba(229, 9, 20, 0.25);
+      --text-main: #f3f3f7;
+      --text-muted: #8b8ba7;
+      --border-color: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(229, 9, 20, 0.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
+    body, html { width: 100%; height: 100%; height: 100dvh; overflow: hidden; background-color: var(--bg-dark); color: var(--text-main); }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    .splash-screen { position: fixed; inset: 0; background-color: #000000; display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.2s ease, visibility 0.2s; }
+    .splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-icon { width: 120px; height: 120px; object-fit: contain; }
+    .auth-screen { position: fixed; inset: 0; background: radial-gradient(circle at top center, rgba(229, 9, 20, 0.15), transparent 60%), var(--bg-dark); display: flex; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+    .auth-card { background: var(--bg-panel); padding: 28px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-color); width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 14px; }
+    .brand-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
+    .brand-logo img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 0 8px var(--accent-red-glow)); }
+    .auth-card h2 { color: var(--text-main); font-size: 20px; font-weight: 700; text-align: center; }
+    .auth-card p { color: var(--text-muted); font-size: 13px; text-align: center; margin-top: -8px; margin-bottom: 8px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .username-input-wrapper { position: relative; display: flex; align-items: center; }
+    .username-prefix { position: absolute; left: 12px; color: var(--accent-red); font-weight: 700; font-size: 14px; pointer-events: none; }
+    .username-input-wrapper input { padding-left: 28px !important; }
+    input[type="text"], input[type="email"], input[type="password"], textarea { width: 100%; padding: 10px 14px; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); outline: none; font-size: 13px; transition: all 0.2s ease; }
+    textarea { resize: none; height: 80px; }
+    input:focus, textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-red-glow); }
+    .btn { background: linear-gradient(135deg, var(--accent-red), #b80710); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 12px var(--accent-red-glow); }
+    .btn:hover { background: linear-gradient(135deg, var(--accent-red-hover), var(--accent-red)); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: var(--bg-hover); color: var(--text-main); box-shadow: none; border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: #2c2c3e; }
+    .btn-icon { padding: 8px; border-radius: 8px; aspect-ratio: 1; }
+    .error-msg { color: #ff4d4d; font-size: 12px; text-align: center; min-height: 14px; }
+    .toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: 100%; padding: 0 16px; }
+    .toast { background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-red); color: var(--text-main); padding: 10px 14px; border-radius: 8px; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-width: 380px; width: 100%; animation: toastIn 0.15s ease; }
+    .toast.success { border-left-color: #23c268; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .app-container { display: flex; width: 100vw; height: 100%; height: 100dvh; position: relative; overflow: hidden; }
+    .sidebar { width: 100%; height: 100%; background-color: var(--bg-panel); display: flex; flex-direction: column; border-right: 1px solid var(--border-color); overflow: hidden; }
+    .user-profile { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; }
+    .user-profile:hover { background-color: var(--bg-hover); }
+    .user-info { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+    .user-avatar-main { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #500); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; background-size: cover; background-position: center; flex-shrink: 0; }
+    .user-details { display: flex; flex-direction: column; overflow: hidden; }
+    .user-display-name { font-size: 13px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-handle { font-size: 11px; color: var(--accent-red); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .add-friend-box { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-shrink: 0; }
+    .section-header { padding: 12px 16px 6px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .friends-list, .servers-list { overflow-y: auto; display: flex; flex-direction: column; padding: 0 8px; }
+    .servers-list { max-height: 240px; flex-shrink: 0; border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
+    .friends-list { flex: 1; }
+    .friend-item, .server-item { padding: 10px 12px; margin-bottom: 2px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.15s ease; }
+    .friend-item:hover, .server-item:hover { background-color: var(--bg-hover); }
+    .friend-avatar-wrapper { position: relative; flex-shrink: 0; }
+    .friend-avatar, .server-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #800000); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #ffffff; flex-shrink: 0; background-size: cover; background-position: center; }
+    .server-avatar { border-radius: 12px; width: 52px; height: 52px; font-size: 18px; }
+    .friend-details, .server-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; min-width: 0; }
+    .friend-name, .server-name { font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .friend-last-msg, .server-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-area { display: none; width: 100%; height: 100%; height: 100dvh; flex-direction: column; background-color: var(--bg-dark); overflow: hidden; }
+    .app-container.chat-open .sidebar { display: none; }
+    .app-container.chat-open .chat-area { display: flex; }
+    .chat-header { padding: 0 12px; background-color: rgba(19, 19, 26, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; height: 56px; flex-shrink: 0; }
+    .chat-header-left { display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; }
+    .chat-user-target { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background 0.2s; overflow: hidden; }
+    .chat-user-target:hover { background-color: var(--bg-hover); }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+    .chat-message-row { display: flex; gap: 12px; width: 100%; align-items: flex-start; position: relative; }
+    .chat-msg-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #800000); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; background-size: cover; background-position: center; flex-shrink: 0; cursor: pointer; }
+    .chat-msg-body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+    .chat-msg-header { display: flex; align-items: center; gap: 8px; }
+    .chat-msg-name { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .chat-msg-time { font-size: 11px; color: var(--text-muted); }
+    .chat-msg-text { font-size: 13px; color: var(--text-main); line-height: 1.4; word-wrap: break-word; }
+    .chat-msg-text img { max-width: 100%; max-height: 240px; border-radius: 8px; margin-top: 6px; display: block; }
+    .chat-msg-text h1 { font-size: 24px; font-weight: 700; margin: 4px 0; }
+    .chat-msg-text h2 { font-size: 18px; font-weight: 700; margin: 3px 0; }
+    .chat-msg-text h3 { font-size: 14px; font-weight: 700; margin: 2px 0; }
+    .chat-msg-text .msg-bold { font-weight: 700; }
+    .invite-embed-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; max-width: 340px; margin-top: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+    .invite-embed-banner { height: 70px; background-size: cover; background-position: center; }
+    .invite-embed-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .invite-embed-top { display: flex; align-items: center; gap: 10px; margin-top: -28px; }
+    .invite-embed-avatar { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--bg-card); background: var(--bg-panel); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0; }
+    .invite-embed-title-area { display: flex; flex-direction: column; padding-top: 14px; }
+    .invite-embed-name { font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 4px; }
+    .invite-embed-members { font-size: 11px; color: var(--text-muted); }
+    .invite-embed-desc-text { font-size: 12px; color: var(--text-muted); line-height: 1.3; }
+    .invite-embed-join-btn { background: #23c268 !important; color: white; width: 100%; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; border: none; cursor: pointer; margin-top: 4px; transition: opacity 0.2s; box-shadow: 0 2px 8px rgba(35, 194, 104, 0.3); text-align: center; }
+    .invite-embed-join-btn:hover { opacity: 0.9; }
+    .chat-footer { padding: 12px 16px; background-color: var(--bg-panel); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+    .file-btn { background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; position: relative; }
+    .file-btn:hover { background: var(--bg-hover); color: var(--accent-red); }
+    #fileInput, #avatarFileInput, #serverAvatarFileInput { display: none; }
+    .color-picker-trigger-box { display: flex; align-items: center; gap: 10px; background-color: var(--bg-input); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; }
+    .color-picker-trigger-box:hover { border-color: var(--border-focus); background-color: var(--bg-hover); }
+    .color-preview-swatch { width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0; }
+    .color-picker-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); display: flex; justify-content: center; align-items: center; z-index: 500; padding: 16px; }
+    .color-picker-card { background: #181822; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9); }
+    .color-picker-header { display: flex; justify-content: space-between; align-items: center; position: relative; min-height: 32px; }
+    .color-picker-header h3 { font-size: 16px; font-weight: 600; color: #ffffff; margin: 0 auto; }
+    .color-picker-select-btn { background: #282836; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; position: absolute; right: 0; transition: all 0.2s ease; }
+    .color-picker-select-btn:hover { background: #36364a; border-color: rgba(255, 255, 255, 0.25); }
+    .color-picker-hex-input { width: 100%; padding: 12px 14px; background-color: #111118; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 600; outline: none; font-family: 'Plus Jakarta Sans', monospace; transition: border-color 0.2s; }
+    .color-picker-hex-input:focus { border-color: rgba(255, 255, 255, 0.3); }
+    .color-picker-sat-box { position: relative; width: 100%; height: 240px; border-radius: 12px; overflow: hidden; cursor: crosshair; touch-action: none; user-select: none; }
+    .color-picker-sat-bg { width: 100%; height: 100%; position: absolute; inset: 0; background-color: #ff0000; }
+    .color-picker-sat-white { width: 100%; height: 100%; position: absolute; inset: 0; background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0)); }
+    .color-picker-sat-black { width: 100%; height: 100%; position: absolute; inset: 0; background: linear-gradient(to top, #000000, rgba(0, 0, 0, 0)); }
+    .color-picker-sat-pointer { position: absolute; width: 20px; height: 20px; border: 2px solid #ffffff; box-shadow: 0 0 4px rgba(0, 0, 0, 0.8), inset 0 0 2px rgba(0, 0, 0, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+    .color-picker-hue-bar { position: relative; width: 100%; height: 18px; border-radius: 9px; background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%); cursor: pointer; touch-action: none; user-select: none; }
+    .color-picker-hue-thumb { position: absolute; top: 50%; width: 14px; height: 24px; background: #ff0000; border: 2px solid #ffffff; border-radius: 8px; transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); display: flex; justify-content: center; align-items: center; z-index: 300; padding: 16px; }
+    .modal-overlay.fullscreen { padding: 0; align-items: stretch; }
+    .profile-modal, .server-create-modal { background: var(--bg-panel); width: 100%; max-width: 420px; border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; max-height: 90vh; }
+    .modal-overlay.fullscreen .profile-modal { max-width: 100%; max-height: 100%; height: 100%; border-radius: 0; border: none; }
+    .modal-top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background-color: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+    .profile-banner { height: 100px; background: linear-gradient(135deg, var(--accent-red), #400000); position: relative; flex-shrink: 0; }
+    .profile-avatar-wrapper { position: relative; margin-top: -40px; margin-left: 20px; width: 80px; height: 80px; flex-shrink: 0; }
+    .profile-avatar-preview { width: 80px; height: 80px; border-radius: 50%; background: var(--bg-card); border: 4px solid var(--bg-panel); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--accent-red); background-size: cover; background-position: center; overflow: hidden; }
+    .avatar-edit-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; cursor: pointer; transition: opacity 0.2s; }
+    .profile-avatar-wrapper:hover .avatar-edit-overlay { opacity: 1; }
+    .profile-body { padding: 16px 20px 20px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .profile-name-display { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+    .profile-card-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+    .field-value { font-size: 13px; color: var(--text-main); line-height: 1.4; }
+    .crop-modal-content { background: #111116; border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 360px; padding: 16px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+    .crop-viewport-container { position: relative; width: 260px; height: 260px; background: #000; border-radius: 12px; overflow: hidden; touch-action: none; cursor: move; border: 1px solid rgba(255,255,255,0.1); }
+    .crop-grid-overlay { position: absolute; inset: 0; pointer-events: none; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; border: 1px solid rgba(255, 255, 255, 0.4); }
+    .crop-grid-overlay div { border: 1px dashed rgba(255, 255, 255, 0.25); }
+    .crop-controls { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+    .crop-slider-label { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
+    input[type=range] { width: 100%; accent-color: var(--accent-red); }
+    .crop-actions { display: flex; justify-content: space-between; width: 100%; gap: 10px; }
+    .server-create-body { padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; overflow-y: auto; }
+    .server-icon-picker { width: 90px; height: 90px; border-radius: 50%; border: 2px dashed var(--border-focus); background: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; position: relative; overflow: hidden; color: var(--text-muted); font-size: 11px; font-weight: 600; }
+    .server-icon-picker img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .invite-link-box { background: var(--bg-input); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--text-main); width: 100%; }
+    .invite-friends-list { display: flex; flex-direction: column; gap: 8px; width: 100%; max-height: 220px; overflow-y: auto; }
+    .invite-friend-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--bg-card); border-radius: 8px; }
+    .hidden { display: none !important; }
+
+    /* ==================== FRIENDS AVATAR STRIP ==================== */
+    .friends-avatar-strip { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+    .friends-avatar-strip .strip-avatars { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
+    .strip-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #800000); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; background-size: cover; background-position: center; flex-shrink: 0; cursor: pointer; border: 2px solid transparent; transition: all 0.15s ease; }
+    .strip-avatar:hover { border-color: var(--accent-red); transform: scale(1.08); }
+    .strip-arrow-btn { background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s ease; }
+    .strip-arrow-btn:hover { background: var(--accent-red); border-color: var(--accent-red); }
+    .all-friends-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 400; display: flex; justify-content: center; align-items: center; padding: 16px; }
+    .all-friends-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 420px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+    .all-friends-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+    .all-friends-header h3 { font-size: 16px; font-weight: 700; }
+    .all-friends-body { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+    /* ==================== MESSAGE CONTEXT MENU ==================== */
+    .msg-context-menu { position: fixed; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); z-index: 600; overflow: hidden; min-width: 170px; animation: ctxIn 0.12s ease; }
+    @keyframes ctxIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .msg-context-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 500; cursor: pointer; text-align: left; transition: background 0.15s; }
+    .msg-context-menu button:hover { background: var(--bg-hover); }
+    .msg-context-menu button.danger { color: #ff4d4d; }
+    .msg-context-menu button.danger:hover { background: rgba(255, 77, 77, 0.1); }
+
+    /* ==================== REPLY PREVIEW ==================== */
+    .reply-preview-bar { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: var(--bg-card); border-top: 1px solid var(--border-color); border-left: 3px solid var(--accent-red); }
+    .reply-preview-bar .reply-content { flex: 1; overflow: hidden; }
+    .reply-preview-bar .reply-name { font-size: 11px; font-weight: 700; color: var(--accent-red); }
+    .reply-preview-bar .reply-text { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reply-preview-bar .reply-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
+    .reply-preview-bar .reply-close:hover { color: var(--text-main); }
+    .msg-reply-quote { background: rgba(255,255,255,0.04); border-left: 3px solid var(--accent-red); padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 12px; }
+    .msg-reply-quote .rq-name { font-weight: 700; color: var(--accent-red); }
+    .msg-reply-quote .rq-text { color: var(--text-muted); }
+
+    /* ==================== FILE PREVIEWS ==================== */
+    .msg-file-preview { max-width: 320px; border-radius: 10px; overflow: hidden; margin-top: 6px; border: 1px solid var(--border-color); }
+    .msg-file-preview img { max-width: 100%; max-height: 240px; display: block; }
+    .msg-file-preview video { max-width: 100%; max-height: 240px; display: block; background: #000; }
+    .msg-file-preview audio { width: 100%; display: block; }
+    .msg-file-generic { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-card); border-radius: 10px; margin-top: 6px; max-width: 320px; border: 1px solid var(--border-color); }
+    .msg-file-generic .file-icon { font-size: 24px; flex-shrink: 0; }
+    .msg-file-generic .file-info { flex: 1; overflow: hidden; }
+    .msg-file-generic .file-name { font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-file-generic .file-size { font-size: 11px; color: var(--text-muted); }
+    .msg-file-generic a { color: var(--accent-red); font-size: 12px; font-weight: 600; text-decoration: none; }
+    .msg-file-generic a:hover { text-decoration: underline; }
+
+    /* ==================== CHAMADAS ==================== */
+    .chat-header-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-call { background: var(--bg-hover); border: 1px solid var(--border-color); color: var(--text-main); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+    .btn-call:hover { background: var(--accent-red); border-color: var(--accent-red); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-red-glow); }
+    .btn-call:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .call-modal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; overflow: hidden; }
+    .call-videos-grid { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #0a0a0f; overflow: hidden; }
+    .call-video-remote { width: 100%; height: 100%; object-fit: cover; background: #000; display: block; }
+    .call-video-local { position: absolute; bottom: 100px; right: 16px; width: 120px; height: 160px; border-radius: 12px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2); background: #111; z-index: 10; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); transition: all 0.2s; }
+    .call-video-local.hidden { display: none; }
+    .call-avatar-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: radial-gradient(circle at center, #1a1a24, #000); }
+    .call-avatar-big { width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #500); display: flex; align-items: center; justify-content: center; font-size: 56px; font-weight: 700; color: #fff; background-size: cover; background-position: center; box-shadow: 0 0 0 8px rgba(229, 9, 20, 0.15), 0 0 60px rgba(229, 9, 20, 0.4); animation: callPulse 2s ease-in-out infinite; }
+    @keyframes callPulse {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(229, 9, 20, 0.15), 0 0 60px rgba(229, 9, 20, 0.4); }
+      50% { box-shadow: 0 0 0 16px rgba(229, 9, 20, 0.08), 0 0 90px rgba(229, 9, 20, 0.6); }
+    }
+    .call-name-big { font-size: 22px; font-weight: 700; color: #fff; }
+    .call-status-text { font-size: 14px; color: var(--text-muted); letter-spacing: 0.5px; }
+
+    .call-controls { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 20px 32px; background: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent); display: flex; justify-content: center; gap: 14px; z-index: 20; }
+    .call-ctrl-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+    .call-ctrl-btn:hover { background: rgba(255, 255, 255, 0.22); transform: scale(1.05); }
+    .call-ctrl-btn.off { background: #fff; color: #000; }
+    .call-ctrl-btn.end-call { background: #ff3b30; border-color: #ff3b30; width: 64px; height: 64px; }
+    .call-ctrl-btn.end-call:hover { background: #ff1e27; box-shadow: 0 0 20px rgba(255, 59, 48, 0.6); }
+
+    .call-timer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #fff; z-index: 20; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .call-type-badge { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff; z-index: 20; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; gap: 6px; }
+    .call-type-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #23c268; animation: blink 1.5s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .incoming-call-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); z-index: 9500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .incoming-call-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px 24px; max-width: 340px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .incoming-call-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-red), #500); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; color: #fff; background-size: cover; background-position: center; animation: callPulse 1.5s ease-in-out infinite; }
+    .incoming-call-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+    .incoming-call-type { font-size: 13px; color: var(--text-muted); }
+    .incoming-call-actions { display: flex; gap: 20px; margin-top: 8px; }
+    .incoming-call-btn { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; transition: all 0.2s ease; }
+    .incoming-call-btn.accept { background: #23c268; }
+    .incoming-call-btn.accept:hover { background: #1ea858; transform: scale(1.08); box-shadow: 0 0 20px rgba(35, 194, 104, 0.5); }
+    .incoming-call-btn.reject { background: #ff3b30; }
+    .incoming-call-btn.reject:hover { background: #e02616; transform: scale(1.08); box-shadow: 0 0 20px rgba(255, 59, 48, 0.5); }
+  </style>
+</head>
+<body>
+  <div id="splashScreen" class="splash-screen hidden">
+    <img id="splashIcon" class="splash-icon" src="icon.png" alt="Carregando..." />
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Autenticação -->
+  <div id="authScreen" class="auth-screen hidden">
+    <div class="auth-card">
+      <div class="brand-logo">
+        <img src="icon.png" alt="Starcord" />
+      </div>
+      <h2 id="authTitle">Criar Conta</h2>
+      <p id="authSub">Preencha os dados abaixo</p>
+      <div class="input-group" id="groupUsername">
+        <div class="username-input-wrapper">
+          <span class="username-prefix">@</span>
+          <input type="text" id="authUsername" placeholder="Nome de Usuário" autocomplete="off" />
+        </div>
+      </div>
+      <div class="input-group" id="groupEmail">
+        <input type="email" id="authEmail" placeholder="Seu E-mail" autocomplete="off" />
+      </div>
+      <div class="input-group">
+        <input type="password" id="authPassword" placeholder="Crie uma senha" />
+      </div>
+      <div class="input-group" id="groupConfirmPassword">
+        <input type="password" id="authConfirmPassword" placeholder="Confirme sua senha" />
+      </div>
+      <button class="btn" id="btnAuthSubmit">Cadastrar</button>
+      <button class="btn btn-secondary" id="btnToggleAuthMode">Já tenho conta!</button>
+      <div id="authError" class="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- Interface Principal -->
+  <div id="appScreen" class="app-container hidden">
+    <div class="sidebar">
+      <div class="user-profile" id="btnOpenSelfProfile" title="Clique para editar seu perfil">
+        <div class="user-info">
+          <div class="user-avatar-main" id="userAvatarMain">U</div>
+          <div class="user-details">
+            <span class="user-display-name" id="userDisplayName">...</span>
+            <span class="user-handle" id="userHandle">@user</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-icon" id="btnLogout" title="Sair">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="add-friend-box">
+        <div class="username-input-wrapper" style="flex: 1;">
+          <span class="username-prefix">@</span>
+          <input type="text" id="friendUsernameInput" placeholder="amigo" autocomplete="off" />
+        </div>
+        <button class="btn btn-icon" id="btnAddFriend" title="Enviar Pedido">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+        </button>
+      </div>
+
+      <!-- Amigos - Apenas avatares com seta -->
+      <div class="friends-avatar-strip">
+        <div class="strip-avatars" id="friendsAvatarStrip"></div>
+        <button class="strip-arrow-btn" id="btnShowAllFriends" title="Ver todos os amigos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div class="section-header">
+        <span>Servidores</span>
+        <button class="btn btn-secondary btn-icon" id="btnOpenCreateServer" title="Criar Servidor">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="servers-list" id="serversList"></div>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <button id="btnBack" class="btn btn-secondary btn-icon" title="Voltar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <div class="chat-user-target" id="btnOpenTargetProfile" title="Ver informações">
+            <div class="friend-avatar" id="chatAvatar">A</div>
+            <div class="user-details">
+              <h3 id="chatTargetTitle">@amigo</h3>
+              <span class="user-handle" id="chatTargetHandle">Clique para ver o perfil</span>
+            </div>
+          </div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="btn-call" id="btnVoiceCall" title="Chamada de voz">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+          <button class="btn-call" id="btnVideoCall" title="Chamada de vídeo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon hidden" id="btnServerHeaderInfo" title="Configurações e Convites">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="reply-preview-bar hidden" id="replyPreviewBar">
+        <div class="reply-content">
+          <div class="reply-name" id="replyPreviewName"></div>
+          <div class="reply-text" id="replyPreviewText"></div>
+        </div>
+        <button class="reply-close" id="btnCancelReply">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form class="chat-footer" id="chatForm">
+        <label for="fileInput" class="file-btn" title="Anexar arquivo (máx 10MB)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57a4 4 0 1 1 5.66 5.66l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </label>
+        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar" />
+        <button type="button" class="file-btn" id="btnRecordAudio" title="Gravar áudio">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <input type="text" id="messageInput" placeholder="Digite sua mensagem..." autocomplete="off" />
+        <button type="submit" class="btn btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Perfil FULLSCREEN -->
+  <div id="profileModal" class="modal-overlay fullscreen hidden">
+    <div class="profile-modal">
+      <div class="modal-top-bar">
+        <button class="btn btn-secondary btn-icon" id="btnCloseProfileModal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h3 id="profileModalTitle">Perfil</h3>
+        <button class="btn hidden" id="btnSaveProfile">Salvar</button>
+      </div>
+      <div class="profile-banner"></div>
+      <div class="profile-avatar-wrapper">
+        <div class="profile-avatar-preview" id="modalAvatarPreview">U</div>
+        <label for="avatarFileInput" class="avatar-edit-overlay" id="modalAvatarEditOverlay" title="Alterar Avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </label>
+        <input type="file" id="avatarFileInput" accept="image/*" />
+      </div>
+      <div class="profile-body">
+        <!-- Nome abaixo do avatar -->
+        <div style="text-align: center; margin-top: 8px;">
+          <div class="profile-name-display" id="profileNameDisplay">Nome</div>
+          <div style="font-size: 13px; color: var(--accent-red); font-weight: 600;" id="profileHandleDisplay">@user</div>
+        </div>
+
+        <!-- Botão Editar Perfil (quando vendo outro perfil, não aparece) -->
+        <button class="btn hidden" id="btnEditProfileFromView" style="width: 100%;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Editar Perfil
+        </button>
+
+        <!-- Bio abaixo do botão Editar Perfil -->
+        <div class="profile-card-section" id="profileBioSection">
+          <div class="field-label">Sobre mim (Bio)</div>
+          <div class="field-value" id="viewBioText">Sem biografia.</div>
+        </div>
+
+        <!-- Campos de edição (só aparecem no modo edição) -->
+        <div class="profile-card-section hidden" id="editNameSection">
+          <div class="field-label">Nome de Exibição</div>
+          <input type="text" id="editDisplayName" placeholder="Ex: Lucas" />
+          <div class="field-label" style="margin-top: 8px;">Pronomes</div>
+          <input type="text" id="editPronouns" placeholder="ex: ele/dele" />
+        </div>
+        <div class="profile-card-section hidden" id="editBioSection">
+          <div class="field-label">Sobre mim (Bio)</div>
+          <textarea id="editBio" placeholder="Escreva algo sobre você..."></textarea>
+        </div>
+
+        <!-- Campos de visualização -->
+        <div class="profile-card-section hidden" id="viewPronounsSection">
+          <div class="field-label">Pronomes</div>
+          <div class="field-value" id="viewPronounsText">Não informado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Todos os Amigos -->
+  <div id="allFriendsModal" class="all-friends-modal hidden">
+    <div class="all-friends-card">
+      <div class="all-friends-header">
+        <h3>Todos os Amigos</h3>
+        <button class="btn btn-secondary btn-icon" id="btnCloseAllFriends">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="all-friends-body" id="allFriendsBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Criar Servidor -->
+  <div id="createServerModal" class="modal-overlay hidden">
+    <div class="profile-modal">
+      <div class="modal-top-bar">
+        <button class="btn btn-secondary btn-icon" id="btnCloseCreateServer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h3>Criar seu servidor</h3>
+        <div></div>
+      </div>
+      <div class="server-create-body">
+        <p style="color: var(--text-muted); font-size: 13px; text-align: center;">Seu servidor é onde você e seus amigos se reúnem. Crie o seu e comece a interagir.</p>
+        <label class="server-icon-picker" id="serverIconPickerLabel">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>ENVIAR</span>
+          <input type="file" id="serverAvatarFileInput" accept="image/*" />
+        </label>
+        <div class="input-group" style="width: 100%;">
+          <div class="field-label">Nome do servidor</div>
+          <input type="text" id="inputServerName" placeholder="Nome do servidor" />
+        </div>
+        <div class="input-group" style="width: 100%;">
+          <div class="field-label">Descrição do servidor</div>
+          <textarea id="inputServerDesc" placeholder="Sobre o que é este servidor?"></textarea>
+        </div>
+        <div class="input-group" style="width: 100%;">
+          <div class="field-label">Cor do Banner</div>
+          <div class="color-picker-trigger-box" id="btnTriggerColorCreate">
+            <div class="color-preview-swatch" id="previewColorCreate" style="background: #000000;"></div>
+            <span id="txtColorCreate" style="font-family: monospace; font-weight: 600; font-size: 13px;">#000000</span>
+            <span style="font-size: 11px; color: var(--accent-red); margin-left: auto; font-weight: 700;">SELECIONAR COR</span>
+          </div>
+        </div>
+        <button class="btn" id="btnConfirmCreateServer" style="width: 100%;">Criar um servidor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Convidar Amigos -->
+  <div id="inviteFriendsModal" class="modal-overlay hidden">
+    <div class="profile-modal">
+      <div class="modal-top-bar">
+        <button class="btn btn-secondary btn-icon" id="btnCloseInviteModal">Pular</button>
+        <h3>Adicione algumas pessoas</h3>
+        <div></div>
+      </div>
+      <div class="server-create-body">
+        <p style="color: var(--text-muted); font-size: 13px; text-align: center;">Você vai precisar de alguns amigos para aproveitar ao máximo o seu servidor.</p>
+        <div class="invite-link-box">
+          <span id="txtInviteLink" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">starcord.gg/xyz</span>
+          <button class="btn" id="btnCopyInviteLink" style="padding: 6px 12px; font-size: 11px;">Copiar link</button>
+        </div>
+        <div class="field-label" style="align-self: flex-start; margin-top: 8px;">Convide seus amigos</div>
+        <div class="invite-friends-list" id="inviteFriendsListContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Informações do Servidor FULLSCREEN -->
+  <div id="serverInfoModal" class="modal-overlay fullscreen hidden">
+    <div class="profile-modal">
+      <div class="modal-top-bar">
+        <button class="btn btn-secondary btn-icon" id="btnCloseServerInfoModal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h3 id="serverInfoModalTitle">Informações do Servidor</h3>
+        <button class="btn hidden" id="btnSaveServerEdit">Salvar</button>
+      </div>
+      <div class="profile-body">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="server-avatar" id="serverInfoModalAvatar" style="width: 60px; height: 60px; border-radius: 50%; font-size: 20px;">S</div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <input type="text" id="editServerNameInput" class="hidden" placeholder="Nome do servidor" />
+            <h4 id="serverInfoName" style="font-size: 16px; font-weight: 700;">Servidor</h4>
+            <span id="serverInfoOwner" style="font-size: 12px; color: var(--accent-red);">Dono: @...</span>
+          </div>
+        </div>
+        <div class="profile-card-section hidden" id="editBannerColorSection">
+          <div class="field-label">Cor do Banner do Servidor</div>
+          <div class="color-picker-trigger-box" id="btnTriggerColorEdit">
+            <div class="color-preview-swatch" id="previewColorEdit" style="background: #000000;"></div>
+            <span id="txtColorEdit" style="font-family: monospace; font-weight: 600; font-size: 13px;">#000000</span>
+            <span style="font-size: 11px; color: var(--accent-red); margin-left: auto; font-weight: 700;">SELECIONAR COR</span>
+          </div>
+        </div>
+        <div class="profile-card-section">
+          <div class="field-label">Link de Convite</div>
+          <div class="invite-link-box">
+            <span id="modalServerInviteLink">starcord.gg/...</span>
+            <button class="btn" id="btnModalCopyLink" style="padding: 6px 10px; font-size: 11px;">Copiar</button>
+          </div>
+        </div>
+        <div class="profile-card-section">
+          <div class="field-label">Descrição</div>
+          <p class="field-value" id="serverInfoDescText">Sem descrição.</p>
+          <textarea id="editServerDescInput" class="hidden" placeholder="Descrição do servidor..."></textarea>
+        </div>
+        <div class="profile-card-section" id="serverMembersSection">
+          <div class="field-label">Membros (<span id="serverMemberCount">0</span>)</div>
+          <div id="serverMembersListContainer" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-secondary" id="btnOpenInviteMore" style="flex: 1;">Convidar Amigos</button>
+          <button class="btn" id="btnLeaveOrDeleteServer" style="background: #ff4d4d; flex: 1;">Sair do Servidor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal do Seletor de Cores -->
+  <div id="customColorPickerModal" class="color-picker-modal hidden">
+    <div class="color-picker-card">
+      <div class="color-picker-header">
+        <h3>Selecione uma cor</h3>
+        <button class="color-picker-select-btn" id="btnSelectColor">Selecionar</button>
+      </div>
+      <input type="text" id="pickerHexInput" class="color-picker-hex-input" value="#000000" autocomplete="off" spellcheck="false" />
+      <div class="color-picker-sat-box" id="pickerSatBox">
+        <div class="color-picker-sat-bg" id="pickerSatBg"></div>
+        <div class="color-picker-sat-white"></div>
+        <div class="color-picker-sat-black"></div>
+        <div class="color-picker-sat-pointer" id="pickerSatPointer"></div>
+      </div>
+      <div class="color-picker-hue-bar" id="pickerHueBar">
+        <div class="color-picker-hue-thumb" id="pickerHueThumb"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Ajuste/Corte de Avatar -->
+  <div id="cropModal" class="modal-overlay hidden">
+    <div class="crop-modal-content">
+      <div style="font-size: 14px; font-weight: 700; width: 100%; text-align: center;">Editar imagem</div>
+      <div class="crop-viewport-container" id="cropContainer">
+        <canvas id="cropCanvas" width="260" height="260"></canvas>
+        <div class="crop-grid-overlay">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+      </div>
+      <div class="crop-controls">
+        <div class="crop-slider-label">
+          <span>Tamanho / Zoom</span>
+          <span id="zoomVal">100%</span>
+        </div>
+        <input type="range" id="cropZoom" min="100" max="500" value="100" />
+      </div>
+      <div class="crop-actions">
+        <button class="btn btn-secondary" id="btnCancelCrop" style="flex:1;">Cancelar</button>
+        <button class="btn" id="btnApplyCrop" style="flex:1;">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE CHAMADA ATIVA ==================== -->
+  <div id="callModal" class="call-modal hidden">
+    <div class="call-videos-grid">
+      <div class="call-type-badge"><span class="dot"></span><span id="callTypeLabel">Chamada de vídeo</span></div>
+      <div class="call-timer" id="callTimer">00:00</div>
+      
+      <video id="remoteVideo" class="call-video-remote hidden" autoplay playsinline></video>
+      
+      <div class="call-avatar-placeholder" id="remotePlaceholder">
+        <div class="call-avatar-big" id="callRemoteAvatar">U</div>
+        <div class="call-name-big" id="callRemoteName">Usuário</div>
+        <div class="call-status-text" id="callStatusText">Chamando...</div>
+      </div>
+      
+      <video id="localVideo" class="call-video-local" autoplay playsinline muted></video>
+    </div>
+    <div class="call-controls">
+      <button class="call-ctrl-btn" id="btnToggleMic" title="Alternar microfone">
+        <svg id="iconMicOn" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <svg id="iconMicOff" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="call-ctrl-btn" id="btnToggleCam" title="Alternar câmera">
+        <svg id="iconCamOn" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <svg id="iconCamOff" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+      <button class="call-ctrl-btn end-call" id="btnEndCall" title="Encerrar chamada">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DE CHAMADA RECEBIDA ==================== -->
+  <div id="incomingCallModal" class="incoming-call-modal hidden">
+    <div class="incoming-call-card">
+      <div class="incoming-call-avatar" id="incomingCallAvatar">U</div>
+      <div class="incoming-call-name" id="incomingCallName">Usuário</div>
+      <div class="incoming-call-type" id="incomingCallType">Chamada de vídeo</div>
+      <div class="incoming-call-actions">
+        <button class="incoming-call-btn reject" id="btnRejectCall" title="Recusar">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+        </button>
+        <button class="incoming-call-btn accept" id="btnAcceptCall" title="Aceitar">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, query, orderBy, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAoqc8NcgLAQqclCFY-q_PcxATIE0FqU_E",
+      authDomain: "starcord-ee336.firebaseapp.com",
+      projectId: "starcord-ee336",
+      storageBucket: "starcord-ee336.firebasestorage.app",
+      messagingSenderId: "166227286926",
+      appId: "1:166227286926:web:8cafd28b2eda5fbaf0e2df",
+      measurementId: "G-E06X0P832W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUsername = null, targetUsername = null, currentServerId = null, activeServerData = null;
+    let unsubscribeMessages = null, tempAvatarBase64 = null, tempServerAvatarBase64 = null, isLoginMode = false;
+    const profileCache = {};
+    let selectedBannerColor = '#000000', editSelectedBannerColor = '#000000';
+
+    // Reply state
+    let replyingTo = null;
+
+    // Audio recording state
+    let mediaRecorder = null, audioChunks = [], isRecording = false;
+
+    function cleanUsername(input) {
+      if (!input) return "";
+      let str = input.trim().toLowerCase();
+      if (str.startsWith('@')) str = str.substring(1);
+      return str.replace(/[^a-z0-9_]/g, '');
+    }
+
+    async function getProfileCached(username) {
+      if (profileCache[username]) return profileCache[username];
+      try {
+        const snap = await getDoc(doc(db, "profiles", username));
+        if (snap.exists()) { profileCache[username] = snap.data(); return profileCache[username]; }
+      } catch (e) {}
+      return { displayName: username, avatarUrl: '' };
+    }
+
+    // Elementos
+    const authScreen = document.getElementById('authScreen');
+    const appScreen = document.getElementById('appScreen');
+    const splashScreen = document.getElementById('splashScreen');
+    const authTitle = document.getElementById('authTitle'), authSub = document.getElementById('authSub');
+    const authUsername = document.getElementById('authUsername'), authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword'), authConfirmPassword = document.getElementById('authConfirmPassword');
+    const btnAuthSubmit = document.getElementById('btnAuthSubmit'), btnToggleAuthMode = document.getElementById('btnToggleAuthMode');
+    const authError = document.getElementById('authError');
+    const groupUsername = document.getElementById('groupUsername'), groupConfirmPassword = document.getElementById('groupConfirmPassword');
+    const userDisplayName = document.getElementById('userDisplayName'), userHandle = document.getElementById('userHandle');
+    const userAvatarMain = document.getElementById('userAvatarMain'), btnLogout = document.getElementById('btnLogout');
+    const friendUsernameInput = document.getElementById('friendUsernameInput'), btnAddFriend = document.getElementById('btnAddFriend');
+    const friendsAvatarStrip = document.getElementById('friendsAvatarStrip'), btnShowAllFriends = document.getElementById('btnShowAllFriends');
+    const serversList = document.getElementById('serversList');
+    const btnBack = document.getElementById('btnBack'), chatTargetTitle = document.getElementById('chatTargetTitle');
+    const chatTargetHandle = document.getElementById('chatTargetHandle'), chatAvatar = document.getElementById('chatAvatar');
+    const chatMessages = document.getElementById('chatMessages'), chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput'), fileInput = document.getElementById('fileInput');
+    const btnServerHeaderInfo = document.getElementById('btnServerHeaderInfo');
+    const toastContainer = document.getElementById('toastContainer');
+    const profileModal = document.getElementById('profileModal'), btnOpenSelfProfile = document.getElementById('btnOpenSelfProfile');
+    const btnOpenTargetProfile = document.getElementById('btnOpenTargetProfile'), btnCloseProfileModal = document.getElementById('btnCloseProfileModal');
+    const btnSaveProfile = document.getElementById('btnSaveProfile'), profileModalTitle = document.getElementById('profileModalTitle');
+    const modalAvatarPreview = document.getElementById('modalAvatarPreview'), modalAvatarEditOverlay = document.getElementById('modalAvatarEditOverlay');
+    const avatarFileInput = document.getElementById('avatarFileInput');
+    const editDisplayName = document.getElementById('editDisplayName');
+    const editPronouns = document.getElementById('editPronouns');
+    const editBio = document.getElementById('editBio');
+    const profileNameDisplay = document.getElementById('profileNameDisplay');
+    const profileHandleDisplay = document.getElementById('profileHandleDisplay');
+    const viewBioText = document.getElementById('viewBioText');
+    const viewPronounsText = document.getElementById('viewPronounsText');
+    const btnEditProfileFromView = document.getElementById('btnEditProfileFromView');
+    const editNameSection = document.getElementById('editNameSection');
+    const editBioSection = document.getElementById('editBioSection');
+    const viewPronounsSection = document.getElementById('viewPronounsSection');
+    const profileBioSection = document.getElementById('profileBioSection');
+    const btnOpenCreateServer = document.getElementById('btnOpenCreateServer'), createServerModal = document.getElementById('createServerModal');
+    const btnCloseCreateServer = document.getElementById('btnCloseCreateServer'), serverAvatarFileInput = document.getElementById('serverAvatarFileInput');
+    const serverIconPickerLabel = document.getElementById('serverIconPickerLabel'), inputServerName = document.getElementById('inputServerName');
+    const inputServerDesc = document.getElementById('inputServerDesc'), btnConfirmCreateServer = document.getElementById('btnConfirmCreateServer');
+    const inviteFriendsModal = document.getElementById('inviteFriendsModal'), btnCloseInviteModal = document.getElementById('btnCloseInviteModal');
+    const txtInviteLink = document.getElementById('txtInviteLink'), btnCopyInviteLink = document.getElementById('btnCopyInviteLink');
+    const inviteFriendsListContainer = document.getElementById('inviteFriendsListContainer');
+    const serverInfoModal = document.getElementById('serverInfoModal'), btnCloseServerInfoModal = document.getElementById('btnCloseServerInfoModal');
+    const serverInfoModalTitle = document.getElementById('serverInfoModalTitle'), serverInfoModalAvatar = document.getElementById('serverInfoModalAvatar');
+    const serverInfoName = document.getElementById('serverInfoName'), serverInfoOwner = document.getElementById('serverInfoOwner');
+    const modalServerInviteLink = document.getElementById('modalServerInviteLink'), btnModalCopyLink = document.getElementById('btnModalCopyLink');
+    const serverInfoDescText = document.getElementById('serverInfoDescText'), serverMembersListContainer = document.getElementById('serverMembersListContainer');
+    const serverMemberCount = document.getElementById('serverMemberCount');
+    const btnOpenInviteMore = document.getElementById('btnOpenInviteMore'), btnLeaveOrDeleteServer = document.getElementById('btnLeaveOrDeleteServer');
+    const editServerNameInput = document.getElementById('editServerNameInput'), editServerDescInput = document.getElementById('editServerDescInput');
+    const btnSaveServerEdit = document.getElementById('btnSaveServerEdit'), editBannerColorSection = document.getElementById('editBannerColorSection');
+    const cropModal = document.getElementById('cropModal'), cropCanvas = document.getElementById('cropCanvas'), cropContainer = document.getElementById('cropContainer');
+    const cropZoom = document.getElementById('cropZoom'), zoomVal = document.getElementById('zoomVal'), btnCancelCrop = document.getElementById('btnCancelCrop');
+    const btnApplyCrop = document.getElementById('btnApplyCrop'), ctx = cropCanvas.getContext('2d');
+    const allFriendsModal = document.getElementById('allFriendsModal'), btnCloseAllFriends = document.getElementById('btnCloseAllFriends');
+    const allFriendsBody = document.getElementById('allFriendsBody');
+    const replyPreviewBar = document.getElementById('replyPreviewBar'), replyPreviewName = document.getElementById('replyPreviewName');
+    const replyPreviewText = document.getElementById('replyPreviewText'), btnCancelReply = document.getElementById('btnCancelReply');
+    const btnRecordAudio = document.getElementById('btnRecordAudio');
+    let loadedImg = null, imgPos = { x: 0, y: 0 }, isDragging = false, dragStart = { x: 0, y: 0 }, activeCropTarget = 'user';
+
+    // Color Picker
+    let pickerH = 0, pickerS = 0, pickerV = 0, currentPickerCallback = null;
+    const customColorPickerModal = document.getElementById('customColorPickerModal'), pickerHexInput = document.getElementById('pickerHexInput');
+    const pickerSatBox = document.getElementById('pickerSatBox'), pickerSatBg = document.getElementById('pickerSatBg');
+    const pickerSatPointer = document.getElementById('pickerSatPointer'), pickerHueBar = document.getElementById('pickerHueBar');
+    const pickerHueThumb = document.getElementById('pickerHueThumb'), btnSelectColor = document.getElementById('btnSelectColor');
+
+    function hsvToRgb(h, s, v) { let r, g, b, i = Math.floor(h / 60) % 6, f = h / 60 - Math.floor(h / 60), p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s); switch (i) { case 0: r = v; g = t; b = p; break; case 1: r = q; g = v; b = p; break; case 2: r = p; g = v; b = t; break; case 3: r = p; g = q; b = v; break; case 4: r = t; g = p; b = v; break; case 5: r = v; g = p; b = q; break; } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
+    function rgbToHex(r, g, b) { return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join(''); }
+    function hexToHsv(hex) { hex = hex.replace('#', ''); if (hex.length === 3) hex = hex.split('').map(c => c + c).join(''); if (hex.length !== 6) return { h: 0, s: 0, v: 0 }; let r = parseInt(hex.substring(0, 2), 16) / 255, g = parseInt(hex.substring(2, 4), 16) / 255, b = parseInt(hex.substring(4, 6), 16) / 255; let max = Math.max(r, g, b), min = Math.min(r, g, b), h, s, v = max, d = max - min; s = max === 0 ? 0 : d / max; if (max === min) { h = 0; } else { switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; } h /= 6; } return { h: h * 360, s: s, v: v }; }
+
+    function openCustomColorPicker(initialColor, onSelectCallback) {
+      currentPickerCallback = onSelectCallback;
+      const hsv = hexToHsv(initialColor || '#000000');
+      pickerH = hsv.h; pickerS = hsv.s; pickerV = hsv.v;
+      customColorPickerModal.classList.remove('hidden');
+      requestAnimationFrame(() => { updatePickerUI(); });
+    }
+
+    function updatePickerUI(updateInput = true) {
+      const rgbBase = hsvToRgb(pickerH, 1, 1);
+      pickerSatBg.style.backgroundColor = `rgb(${rgbBase.r}, ${rgbBase.g}, ${rgbBase.b})`;
+      const satRect = pickerSatBox.getBoundingClientRect();
+      pickerSatPointer.style.left = `${pickerS * (satRect.width || 260)}px`;
+      pickerSatPointer.style.top = `${(1 - pickerV) * (satRect.height || 240)}px`;
+      const hueRect = pickerHueBar.getBoundingClientRect();
+      pickerHueThumb.style.left = `${(pickerH / 360) * (hueRect.width || 260)}px`;
+      pickerHueThumb.style.backgroundColor = `rgb(${rgbBase.r}, ${rgbBase.g}, ${rgbBase.b})`;
+      const finalRgb = hsvToRgb(pickerH, pickerS, pickerV);
+      if (updateInput) pickerHexInput.value = rgbToHex(finalRgb.r, finalRgb.g, finalRgb.b);
+    }
+
+    let isSatDragging = false;
+    function handleSatPointer(e) { const rect = pickerSatBox.getBoundingClientRect(); let x = Math.max(0, Math.min(e.clientX - rect.left, rect.width)); let y = Math.max(0, Math.min(e.clientY - rect.top, rect.height)); pickerS = x / rect.width; pickerV = 1 - (y / rect.height); updatePickerUI(); }
+    pickerSatBox.addEventListener('pointerdown', (e) => { isSatDragging = true; pickerSatBox.setPointerCapture(e.pointerId); handleSatPointer(e); });
+    pickerSatBox.addEventListener('pointermove', (e) => { if (isSatDragging) handleSatPointer(e); });
+    pickerSatBox.addEventListener('pointerup', () => { isSatDragging = false; });
+
+    let isHueDragging = false;
+    function handleHuePointer(e) { const rect = pickerHueBar.getBoundingClientRect(); let x = Math.max(0, Math.min(e.clientX - rect.left, rect.width)); pickerH = (x / rect.width) * 360; if (pickerH >= 360) pickerH = 359.9; updatePickerUI(); }
+    pickerHueBar.addEventListener('pointerdown', (e) => { isHueDragging = true; pickerHueBar.setPointerCapture(e.pointerId); handleHuePointer(e); });
+    pickerHueBar.addEventListener('pointermove', (e) => { if (isHueDragging) handleHuePointer(e); });
+    pickerHueBar.addEventListener('pointerup', () => { isHueDragging = false; });
+
+    pickerHexInput.addEventListener('input', (e) => { let val = e.target.value.trim(); if (!val.startsWith('#')) val = '#' + val; if (/^#([0-9A-F]{3}){1,2}$/i.test(val)) { const hsv = hexToHsv(val); pickerH = hsv.h; pickerS = hsv.s; pickerV = hsv.v; updatePickerUI(false); } });
+
+    btnSelectColor.addEventListener('click', () => { const finalRgb = hsvToRgb(pickerH, pickerS, pickerV); const hex = rgbToHex(finalRgb.r, finalRgb.g, finalRgb.b); if (currentPickerCallback) currentPickerCallback(hex); customColorPickerModal.classList.add('hidden'); });
+
+    document.getElementById('btnTriggerColorCreate').addEventListener('click', () => { openCustomColorPicker(selectedBannerColor, (hex) => { selectedBannerColor = hex; document.getElementById('previewColorCreate').style.backgroundColor = hex; document.getElementById('txtColorCreate').textContent = hex; }); });
+    document.getElementById('btnTriggerColorEdit').addEventListener('click', () => { openCustomColorPicker(editSelectedBannerColor, (hex) => { editSelectedBannerColor = hex; document.getElementById('previewColorEdit').style.backgroundColor = hex; document.getElementById('txtColorEdit').textContent = hex; }); });
+
+    function showToast(message, type = 'info') {
+      const el = document.createElement('div');
+      el.className = 'toast' + (type === 'success' ? ' success' : '');
+      el.textContent = message;
+      toastContainer.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    [authUsername, friendUsernameInput].forEach(input => { input.addEventListener('input', (e) => { e.target.value = cleanUsername(e.target.value); }); });
+
+    btnToggleAuthMode.addEventListener('click', () => {
+      isLoginMode = !isLoginMode; authError.textContent = '';
+      if (isLoginMode) { authTitle.textContent = "Entrar no Starcord"; authSub.textContent = "Digite seus dados para acessar"; groupUsername.classList.add('hidden'); groupConfirmPassword.classList.add('hidden'); authPassword.placeholder = "Sua senha"; btnAuthSubmit.textContent = "Entrar"; btnToggleAuthMode.textContent = "Criar uma conta"; }
+      else { authTitle.textContent = "Criar Conta"; authSub.textContent = "Preencha os dados abaixo"; groupUsername.classList.remove('hidden'); groupConfirmPassword.classList.remove('hidden'); authPassword.placeholder = "Crie uma senha"; btnAuthSubmit.textContent = "Cadastrar"; btnToggleAuthMode.textContent = "Já tenho conta!"; }
+    });
+
+    splashScreen.classList.add('hidden');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userMapSnap = await getDoc(doc(db, "users_map", user.uid));
+          currentUsername = userMapSnap.exists() ? userMapSnap.data().username : user.email.split('@')[0];
+        } catch { currentUsername = user.email.split('@')[0]; }
+        authScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+        carregarMeuPerfil();
+        carregarAmigos();
+        carregarServidores();
+        iniciarEscutaChamadas();
+      } else {
+        currentUsername = null;
+        authScreen.classList.remove('hidden');
+        appScreen.classList.add('hidden');
+        if (globalCallListenerUnsub) { globalCallListenerUnsub(); globalCallListenerUnsub = null; }
+      }
+    });
+
+    btnAuthSubmit.addEventListener('click', async () => {
+      const email = authEmail.value.trim(), password = authPassword.value, uName = cleanUsername(authUsername.value), confirmPassword = authConfirmPassword.value;
+      authError.textContent = '';
+      if (!email) { authError.textContent = 'Digite o seu e-mail.'; return; }
+      if (!password) { authError.textContent = 'Digite a sua senha.'; return; }
+      if (!isLoginMode) { if (!uName) { authError.textContent = 'Digite um nome de usuário.'; return; } if (password !== confirmPassword) { authError.textContent = 'As senhas não coincidem!'; return; } }
+      btnAuthSubmit.disabled = true;
+      try {
+        if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); }
+        else {
+          const userCred = await createUserWithEmailAndPassword(auth, email, password);
+          if ((await getDoc(doc(db, "profiles", uName))).exists()) { authError.textContent = 'Este @username já está em uso.'; btnAuthSubmit.disabled = false; return; }
+          await setDoc(doc(db, "profiles", uName), { username: uName, displayName: uName, email, uid: userCred.user.uid, pronouns: '', bio: '', avatarUrl: '' });
+          await setDoc(doc(db, "users_map", userCred.user.uid), { username: uName, email });
+        }
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use') authError.textContent = 'Este e-mail já está cadastrado.';
+        else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') authError.textContent = 'E-mail ou senha incorretos.';
+        else authError.textContent = 'Erro: ' + error.message;
+      } finally { btnAuthSubmit.disabled = false; }
+    });
+
+    btnLogout.addEventListener('click', (e) => { e.stopPropagation(); encerrarChamada(); signOut(auth); });
+    btnBack.addEventListener('click', () => { appScreen.classList.remove('chat-open'); targetUsername = null; currentServerId = null; activeServerData = null; btnServerHeaderInfo.classList.add('hidden'); cancelReply(); });
+
+    async function carregarMeuPerfil() {
+      onSnapshot(doc(db, "profiles", currentUsername), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          userDisplayName.textContent = data.displayName || currentUsername;
+          userHandle.textContent = `@${currentUsername}`;
+          if (data.avatarUrl) { userAvatarMain.style.backgroundImage = `url(${data.avatarUrl})`; userAvatarMain.textContent = ''; }
+          else { userAvatarMain.style.backgroundImage = 'none'; userAvatarMain.textContent = currentUsername[0].toUpperCase(); }
+        }
+      });
+    }
+
+    avatarFileInput.addEventListener('change', (e) => { activeCropTarget = 'user'; handleImageSelect(e); });
+    serverAvatarFileInput.addEventListener('change', (e) => { activeCropTarget = 'server'; handleImageSelect(e); });
+    function handleImageSelect(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { loadedImg = new Image(); loadedImg.onload = () => { cropZoom.value = 100; zoomVal.textContent = '100%'; imgPos = { x: 0, y: 0 }; drawCropCanvas(); cropModal.classList.remove('hidden'); }; loadedImg.src = event.target.result; }; reader.readAsDataURL(file); e.target.value = ''; }
+    function drawCropCanvas() { if (!loadedImg) return; ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height); const scale = cropZoom.value / 100; const w = cropCanvas.width * scale, h = (loadedImg.height / loadedImg.width) * w; ctx.drawImage(loadedImg, (cropCanvas.width - w) / 2 + imgPos.x, (cropCanvas.height - h) / 2 + imgPos.y, w, h); }
+    cropZoom.addEventListener('input', () => { zoomVal.textContent = `${cropZoom.value}%`; drawCropCanvas(); });
+    cropContainer.addEventListener('pointerdown', (e) => { isDragging = true; dragStart = { x: e.clientX - imgPos.x, y: e.clientY - imgPos.y }; });
+    window.addEventListener('pointermove', (e) => { if (!isDragging) return; imgPos = { x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }; drawCropCanvas(); });
+    window.addEventListener('pointerup', () => { isDragging = false; });
+    btnCancelCrop.addEventListener('click', () => { cropModal.classList.add('hidden'); loadedImg = null; });
+    btnApplyCrop.addEventListener('click', () => { const croppedBase64 = cropCanvas.toDataURL('image/jpeg', 0.85); if (activeCropTarget === 'user') { tempAvatarBase64 = croppedBase64; modalAvatarPreview.style.backgroundImage = `url(${tempAvatarBase64})`; modalAvatarPreview.textContent = ''; } else { tempServerAvatarBase64 = croppedBase64; serverIconPickerLabel.innerHTML = `<img src="${tempServerAvatarBase64}" alt="Icon">`; } cropModal.classList.add('hidden'); });
+
+    // ===== PERFIL FULLSCREEN =====
+    btnOpenSelfProfile.addEventListener('click', async () => {
+      const data = (await getDoc(doc(db, "profiles", currentUsername))).data() || {};
+      profileModalTitle.textContent = "Meu Perfil";
+      btnSaveProfile.classList.add('hidden');
+      modalAvatarEditOverlay.classList.remove('hidden');
+      
+      // Mostrar nome e handle abaixo do avatar
+      profileNameDisplay.textContent = data.displayName || currentUsername;
+      profileHandleDisplay.textContent = `@${currentUsername}`;
+      
+      // Modo visualização primeiro
+      btnEditProfileFromView.classList.remove('hidden');
+      editNameSection.classList.add('hidden');
+      editBioSection.classList.add('hidden');
+      viewPronounsSection.classList.remove('hidden');
+      profileBioSection.classList.remove('hidden');
+      
+      viewBioText.textContent = data.bio || 'Sem biografia.';
+      viewPronounsText.textContent = data.pronouns || 'Não informado';
+      
+      if (data.avatarUrl) { modalAvatarPreview.style.backgroundImage = `url(${data.avatarUrl})`; modalAvatarPreview.textContent = ''; } else { modalAvatarPreview.style.backgroundImage = 'none'; modalAvatarPreview.textContent = currentUsername[0].toUpperCase(); }
+      
+      // Preencher campos de edição
+      editDisplayName.value = data.displayName || '';
+      editPronouns.value = data.pronouns || '';
+      editBio.value = data.bio || '';
+      
+      profileModal.classList.remove('hidden');
+    });
+
+    btnEditProfileFromView.addEventListener('click', () => {
+      // Trocar para modo edição
+      profileModalTitle.textContent = "Editar Perfil";
+      btnSaveProfile.classList.remove('hidden');
+      btnEditProfileFromView.classList.add('hidden');
+      editNameSection.classList.remove('hidden');
+      editBioSection.classList.remove('hidden');
+      viewPronounsSection.classList.add('hidden');
+      profileBioSection.classList.add('hidden');
+    });
+
+    btnOpenTargetProfile.addEventListener('click', async () => {
+      if (currentServerId && activeServerData) { abrirModalInfoServidor(); return; }
+      if (!targetUsername) return;
+      const data = (await getDoc(doc(db, "profiles", targetUsername))).data() || {};
+      profileModalTitle.textContent = `Perfil de @${targetUsername}`;
+      btnSaveProfile.classList.add('hidden');
+      modalAvatarEditOverlay.classList.add('hidden');
+      btnEditProfileFromView.classList.add('hidden');
+      editNameSection.classList.add('hidden');
+      editBioSection.classList.add('hidden');
+      viewPronounsSection.classList.remove('hidden');
+      profileBioSection.classList.remove('hidden');
+      
+      profileNameDisplay.textContent = data.displayName || targetUsername;
+      profileHandleDisplay.textContent = `@${targetUsername}`;
+      viewBioText.textContent = data.bio || 'Sem biografia.';
+      viewPronounsText.textContent = data.pronouns || 'Não informado';
+      
+      if (data.avatarUrl) { modalAvatarPreview.style.backgroundImage = `url(${data.avatarUrl})`; modalAvatarPreview.textContent = ''; } else { modalAvatarPreview.style.backgroundImage = 'none'; modalAvatarPreview.textContent = targetUsername[0].toUpperCase(); }
+      profileModal.classList.remove('hidden');
+    });
+
+    btnCloseProfileModal.addEventListener('click', () => { profileModal.classList.add('hidden'); tempAvatarBase64 = null; });
+    btnSaveProfile.addEventListener('click', async () => {
+      btnSaveProfile.disabled = true;
+      try {
+        const updateData = { displayName: editDisplayName.value.trim() || currentUsername, pronouns: editPronouns.value.trim(), bio: editBio.value.trim() };
+        if (tempAvatarBase64) updateData.avatarUrl = tempAvatarBase64;
+        await setDoc(doc(db, "profiles", currentUsername), updateData, { merge: true });
+        profileCache[currentUsername] = null; showToast('Perfil salvo!', 'success'); profileModal.classList.add('hidden'); tempAvatarBase64 = null;
+      } catch (err) { showToast('Erro ao salvar: ' + err.message); } finally { btnSaveProfile.disabled = false; }
+    });
+
+    // ===== AMIGOS - STRIP DE AVATARES =====
+    btnShowAllFriends.addEventListener('click', () => {
+      allFriendsModal.classList.remove('hidden');
+      carregarListaTodosAmigos();
+    });
+    btnCloseAllFriends.addEventListener('click', () => { allFriendsModal.classList.add('hidden'); });
+
+    async function carregarListaTodosAmigos() {
+      allFriendsBody.innerHTML = '';
+      const snap = await getDocs(collection(db, "users", currentUsername, "friends"));
+      if (snap.empty) {
+        allFriendsBody.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Nenhum amigo adicionado.</div>';
+        return;
+      }
+      for (const docSnap of snap.docs) {
+        const fUser = docSnap.id;
+        const pData = await getProfileCached(fUser);
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.innerHTML = `
+          <div class="friend-avatar-wrapper">
+            <div class="friend-avatar" ${pData.avatarUrl ? `style="background-image:url('${pData.avatarUrl}')"` : ''}>${pData.avatarUrl ? '' : (pData.displayName || fUser)[0].toUpperCase()}</div>
+          </div>
+          <div class="friend-details">
+            <div class="friend-name">${pData.displayName || fUser}</div>
+            <div class="friend-last-msg">@${fUser}</div>
+          </div>
+        `;
+        item.addEventListener('click', () => { allFriendsModal.classList.add('hidden'); abrirChatAmigo(fUser); });
+        allFriendsBody.appendChild(item);
+      }
+    }
+
+    // ===== FORMATAÇÃO DE TEXTO =====
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatarTexto(raw) {
+      // Primeiro processar cores §
+      const colorMap = {
+        'c': '#ff6b6b', // vermelho claro
+        'b': '#74c0fc', // azul claro
+        'a': '#69db7c', // verde claro
+        'e': '#ffe066', // amarelo
+        '6': '#ffa94d', // laranja
+        '2': '#2b8a3e', // verde escuro
+        'd': '#f783ac', // rosa
+        '4': '#c92a2a'  // vermelho escuro
+      };
+      
+      // Processar títulos primeiro, dividindo por linhas
+      const lines = raw.split('\n');
+      let result = '';
+      
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        // Verificar se a linha começa com # (com espaço ou não)
+        // ### texto → h3 (size normal/14px)
+        // ## texto → h2 (size 18px)
+        // # texto → h1 (size 24px)
+        // Mas #teste ou #  teste (espaço duplo) não é título
+        
+        let titleMatch = line.match(/^(#{1,3})\s(.*)$/);
+        if (titleMatch && !line.match(/^#{1,3}\s{2,}/)) {
+          const level = titleMatch[1].length;
+          const content = titleMatch[2];
+          const tag = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
+          result += `<${tag}>${processarInline(content, colorMap)}</${tag}>`;
+        } else {
+          // Não é título - processar inline
+          result += processarInline(line, colorMap);
+        }
+        
+        if (i < lines.length - 1) result += '<br>';
+      }
+      
+      return result;
+    }
+
+    function processarInline(text, colorMap) {
+      let html = escapeHtml(text);
+      
+      // Negrito **texto**
+      html = html.replace(/\*\*(.+?)\*\*/g, '<span class="msg-bold">$1</span>');
+      
+      // Cores §c, §b, etc.
+      for (const [code, color] of Object.entries(colorMap)) {
+        const regex = new RegExp('§' + code + '(.+?)(?=§|$)', 'g');
+        html = html.replace(regex, `<span style="color:${color}">$1</span>`);
+      }
+      
+      return html;
+    }
+
+    // ===== PROCESSAR MENSAGEM COM EMBEDS E FORMATAÇÃO =====
+    async function processarTextoComEmbeds(text, bodyDiv) {
+      if (!text) return;
+      
+      const inviteRegex = /starcord\.gg\/([a-zA-Z0-9]+)/g;
+      if (inviteRegex.test(text)) {
+        inviteRegex.lastIndex = 0;
+        let match, lastIdx = 0;
+        const textDiv = document.createElement('div');
+        textDiv.className = 'chat-msg-text';
+        textDiv.innerHTML = '';
+        
+        while ((match = inviteRegex.exec(text)) !== null) {
+          if (match.index > lastIdx) {
+            const beforeText = text.substring(lastIdx, match.index);
+            textDiv.innerHTML += formatarTexto(beforeText);
+          }
+          let inviteCode = match[1];
+          const linkSpan = document.createElement('span');
+          linkSpan.style.color = "var(--accent-red)";
+          linkSpan.style.fontWeight = "600";
+          linkSpan.textContent = match[0];
+          textDiv.appendChild(linkSpan);
+          
+          try {
+            const q = query(collection(db, "servers"), where("inviteCode", "==", inviteCode)), querySnapshot = await getDocs(q);
+            const embedCard = document.createElement('div');
+            embedCard.className = 'invite-embed-card';
+            if (!querySnapshot.empty) {
+              const sDoc = querySnapshot.docs[0], sData = sDoc.data(), sId = sDoc.id;
+              embedCard.innerHTML = `<div class="invite-embed-banner" style="background-color: ${sData.bannerColor || '#000000'};"></div><div class="invite-embed-body"><div class="invite-embed-top"><div class="invite-embed-avatar" ${sData.iconUrl ? 'style="background-image:url(\''+sData.iconUrl+'\')"' : ''}>${sData.iconUrl ? '' : sData.name[0].toUpperCase()}</div><div class="invite-embed-title-area"><div class="invite-embed-name">${sData.name}</div><div class="invite-embed-members">${sData.members ? sData.members.length : 1} membros</div></div></div><div class="invite-embed-desc-text">${sData.description || 'Servidor da comunidade Starcord.'}</div><button class="invite-embed-join-btn">Ir para o Servidor</button></div>`;
+              embedCard.querySelector('.invite-embed-join-btn').addEventListener('click', async () => {
+                if (!sData.members.includes(currentUsername)) { await updateDoc(doc(db, "servers", sId), { members: arrayUnion(currentUsername) }); showToast(`Você entrou em ${sData.name}!`, 'success'); }
+                abrirServidorChat(sId);
+              });
+            } else {
+              embedCard.innerHTML = `<div class="invite-embed-banner" style="background-color: #ff4d4d;"></div><div class="invite-embed-body"><div class="invite-embed-name" style="color: #ff4d4d;">Convite Inválido</div><div class="invite-embed-desc-text">O link <b>starcord.gg/${inviteCode}</b> não existe ou o servidor foi excluído.</div></div>`;
+            }
+            textDiv.appendChild(embedCard);
+          } catch(err) { console.error(err); }
+          lastIdx = inviteRegex.lastIndex;
+        }
+        if (lastIdx < text.length) {
+          textDiv.innerHTML += formatarTexto(text.substring(lastIdx));
+        }
+        bodyDiv.appendChild(textDiv);
+      } else {
+        const textDiv = document.createElement('div');
+        textDiv.className = 'chat-msg-text';
+        textDiv.innerHTML = formatarTexto(text);
+        bodyDiv.appendChild(textDiv);
+      }
+    }
+
+    // ===== FILE TYPE HANDLING =====
+    function getFileCategory(file) {
+      const type = file.type || '';
+      if (type.startsWith('image/')) return 'image';
+      if (type.startsWith('video/')) return 'video';
+      if (type.startsWith('audio/')) return 'audio';
+      return 'generic';
+    }
+
+    function getFileIcon(file) {
+      const type = file.type || '';
+      if (type.includes('pdf')) return '📄';
+      if (type.includes('zip') || type.includes('rar') || type.includes('7z')) return '🗜️';
+      if (type.includes('word') || type.includes('document')) return '📝';
+      if (type.includes('excel') || type.includes('sheet')) return '📊';
+      return '📎';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    // ===== FILE UPLOAD (MAX 10MB) =====
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+      if (file.size > MAX_SIZE) {
+        showToast('Arquivo muito grande! Máximo 10MB.', 'error');
+        fileInput.value = '';
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const fileBase64 = event.target.result;
+        const text = messageInput.value.trim();
+        messageInput.value = '';
+        
+        const fileCategory = getFileCategory(file);
+        const myProfile = await getProfileCached(currentUsername);
+        
+        const msgData = {
+          text: text || null,
+          fileUrl: fileBase64,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          fileCategory: fileCategory,
+          sender: currentUsername,
+          senderDisplayName: myProfile.displayName || currentUsername,
+          senderAvatar: myProfile.avatarUrl || '',
+          timestamp: serverTimestamp()
+        };
+        
+        if (replyingTo) {
+          msgData.replyTo = replyingTo;
+          cancelReply();
+        }
+        
+        if (currentServerId) {
+          await addDoc(collection(db, "servers", currentServerId, "messages"), msgData);
+        } else if (targetUsername) {
+          const roomId = [currentUsername, targetUsername].sort().join('_');
+          await addDoc(collection(db, "chats", roomId, "messages"), msgData);
+        }
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    });
+
+    // ===== ÁUDIO RECORDING =====
+    btnRecordAudio.addEventListener('click', async () => {
+      if (isRecording) {
+        // Parar gravação
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        isRecording = false;
+        btnRecordAudio.style.background = '';
+        btnRecordAudio.style.color = '';
+        return;
+      }
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          
+          if (audioBlob.size > 10 * 1024 * 1024) {
+            showToast('Áudio muito grande! Máximo 10MB.', 'error');
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const audioBase64 = event.target.result;
+            const myProfile = await getProfileCached(currentUsername);
+            const msgData = {
+              text: null,
+              fileUrl: audioBase64,
+              fileName: 'audio.webm',
+              fileSize: audioBlob.size,
+              fileType: 'audio/webm',
+              fileCategory: 'audio',
+              sender: currentUsername,
+              senderDisplayName: myProfile.displayName || currentUsername,
+              senderAvatar: myProfile.avatarUrl || '',
+              timestamp: serverTimestamp()
+            };
+            if (replyingTo) { msgData.replyTo = replyingTo; cancelReply(); }
+            if (currentServerId) {
+              await addDoc(collection(db, "servers", currentServerId, "messages"), msgData);
+            } else if (targetUsername) {
+              const roomId = [currentUsername, targetUsername].sort().join('_');
+              await addDoc(collection(db, "chats", roomId, "messages"), msgData);
+            }
+          };
+          reader.readAsDataURL(audioBlob);
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        btnRecordAudio.style.background = 'var(--accent-red)';
+        btnRecordAudio.style.color = '#fff';
+        showToast('Gravando áudio... Clique novamente para parar.');
+      } catch (err) {
+        showToast('Erro ao acessar microfone: ' + err.message);
+      }
+    });
+
+    // ===== RENDER MENSAGENS =====
+    function renderMessageContent(data, bodyDiv, msgId) {
+      // Reply quote
+      if (data.replyTo) {
+        const quote = document.createElement('div');
+        quote.className = 'msg-reply-quote';
+        quote.innerHTML = `<span class="rq-name">${escapeHtml(data.replyTo.name)}</span> <span class="rq-text">${escapeHtml(data.replyTo.text || '📎 Anexo')}</span>`;
+        bodyDiv.appendChild(quote);
+      }
+      
+      // Texto
+      if (data.text) {
+        processarTextoComEmbeds(data.text, bodyDiv);
+      }
+      
+      // Arquivo
+      if (data.fileUrl) {
+        const category = data.fileCategory || 'generic';
+        if (category === 'image') {
+          const preview = document.createElement('div');
+          preview.className = 'msg-file-preview';
+          const img = document.createElement('img');
+          img.src = data.fileUrl;
+          img.alt = data.fileName || 'Imagem';
+          preview.appendChild(img);
+          bodyDiv.appendChild(preview);
+        } else if (category === 'video') {
+          const preview = document.createElement('div');
+          preview.className = 'msg-file-preview';
+          const vid = document.createElement('video');
+          vid.src = data.fileUrl;
+          vid.controls = true;
+          vid.preload = 'metadata';
+          preview.appendChild(vid);
+          bodyDiv.appendChild(preview);
+        } else if (category === 'audio') {
+          const preview = document.createElement('div');
+          preview.className = 'msg-file-preview';
+          const aud = document.createElement('audio');
+          aud.src = data.fileUrl;
+          aud.controls = true;
+          preview.appendChild(aud);
+          bodyDiv.appendChild(preview);
+        } else {
+          const generic = document.createElement('div');
+          generic.className = 'msg-file-generic';
+          generic.innerHTML = `<div class="file-icon">${getFileIcon({ type: data.fileType })}</div><div class="file-info"><div class="file-name">${escapeHtml(data.fileName || 'Arquivo')}</div><div class="file-size">${formatFileSize(data.fileSize || 0)}</div></div><a href="${data.fileUrl}" download="${escapeHtml(data.fileName || 'download')}">Baixar</a>`;
+          bodyDiv.appendChild(generic);
+        }
+      }
+    }
+
+    function carregarMensagensServidor(serverId) {
+      chatMessages.innerHTML = '';
+      const q = query(collection(db, "servers", serverId, "messages"), orderBy("timestamp", "asc"));
+      if (unsubscribeMessages) unsubscribeMessages();
+      unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+        chatMessages.innerHTML = '';
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          const msgId = docSnap.id;
+          let name = data.senderDisplayName, avatar = data.senderAvatar;
+          if (!name || avatar === undefined) { const p = await getProfileCached(data.sender); name = p.displayName || data.sender; avatar = p.avatarUrl || ''; }
+          let hora = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          
+          const row = document.createElement('div');
+          row.classList.add('chat-message-row');
+          row.dataset.msgId = msgId;
+          row.dataset.sender = data.sender;
+          
+          const avatarDiv = document.createElement('div');
+          avatarDiv.className = 'chat-msg-avatar';
+          if (avatar) avatarDiv.style.backgroundImage = `url('${avatar}')`;
+          else avatarDiv.textContent = name ? name[0].toUpperCase() : '?';
+          avatarDiv.addEventListener('click', () => abrirPerfilDeUsuario(data.sender));
+          
+          const bodyDiv = document.createElement('div');
+          bodyDiv.className = 'chat-msg-body';
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'chat-msg-header';
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'chat-msg-name';
+          nameSpan.textContent = name;
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'chat-msg-time';
+          timeSpan.textContent = hora;
+          headerDiv.appendChild(nameSpan);
+          headerDiv.appendChild(timeSpan);
+          bodyDiv.appendChild(headerDiv);
+          
+          renderMessageContent(data, bodyDiv, msgId);
+          
+          row.appendChild(avatarDiv);
+          row.appendChild(bodyDiv);
+          chatMessages.appendChild(row);
+          
+          // Context menu (segurar mensagem)
+          row.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            mostrarMenuContexto(e, data, msgId);
+          });
+          // Long press para mobile
+          let pressTimer;
+          row.addEventListener('touchstart', (e) => {
+            pressTimer = setTimeout(() => {
+              mostrarMenuContexto(e.touches[0], data, msgId);
+            }, 600);
+          });
+          row.addEventListener('touchend', () => clearTimeout(pressTimer));
+          row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+
+    function abrirPerfilDeUsuario(username) {
+      targetUsername = username;
+      btnOpenTargetProfile.click();
+    }
+
+    // ===== CONTEXT MENU =====
+    let currentContextMsg = null;
+    function mostrarMenuContexto(e, data, msgId) {
+      // Remover menu anterior
+      const existing = document.querySelector('.msg-context-menu');
+      if (existing) existing.remove();
+      
+      const menu = document.createElement('div');
+      menu.className = 'msg-context-menu';
+      menu.style.left = Math.min(e.clientX || e.pageX, window.innerWidth - 180) + 'px';
+      menu.style.top = Math.min(e.clientY || e.pageY, window.innerHeight - 200) + 'px';
+      
+      // Responder
+      const btnReply = document.createElement('button');
+      btnReply.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg> Responder`;
+      btnReply.addEventListener('click', () => {
+        replyingTo = { msgId: msgId, name: data.senderDisplayName || data.sender, text: data.text || '📎 Anexo' };
+        replyPreviewName.textContent = replyingTo.name;
+        replyPreviewText.textContent = replyingTo.text;
+        replyPreviewBar.classList.remove('hidden');
+        menu.remove();
+      });
+      menu.appendChild(btnReply);
+      
+      // Copiar texto
+      if (data.text) {
+        const btnCopy = document.createElement('button');
+        btnCopy.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar Texto`;
+        btnCopy.addEventListener('click', () => {
+          navigator.clipboard.writeText(data.text);
+          showToast('Texto copiado!', 'success');
+          menu.remove();
+        });
+        menu.appendChild(btnCopy);
+      }
+      
+      // Editar (se for o autor)
+      if (data.sender === currentUsername && data.text) {
+        const btnEdit = document.createElement('button');
+        btnEdit.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar`;
+        btnEdit.addEventListener('click', () => {
+          const newText = prompt('Editar mensagem:', data.text);
+          if (newText !== null && newText.trim()) {
+            const msgRef = currentServerId
+              ? doc(db, "servers", currentServerId, "messages", msgId)
+              : doc(db, "chats", [currentUsername, targetUsername].sort().join('_'), "messages", msgId);
+            updateDoc(msgRef, { text: newText.trim(), edited: true }).then(() => showToast('Mensagem editada!', 'success'));
+          }
+          menu.remove();
+        });
+        menu.appendChild(btnEdit);
+      }
+      
+      // Apagar (se for o autor ou admin do servidor)
+      const canDelete = data.sender === currentUsername || (currentServerId && activeServerData && activeServerData.owner === currentUsername);
+      if (canDelete) {
+        const btnDelete = document.createElement('button');
+        btnDelete.className = 'danger';
+        btnDelete.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Apagar`;
+        btnDelete.addEventListener('click', () => {
+          if (confirm('Apagar esta mensagem?')) {
+            const msgRef = currentServerId
+              ? doc(db, "servers", currentServerId, "messages", msgId)
+              : doc(db, "chats", [currentUsername, targetUsername].sort().join('_'), "messages", msgId);
+            deleteDoc(msgRef).then(() => showToast('Mensagem apagada.', 'success'));
+          }
+          menu.remove();
+        });
+        menu.appendChild(btnDelete);
+      }
+      
+      document.body.appendChild(menu);
+      
+      // Fechar ao clicar fora
+      setTimeout(() => {
+        const closeMenu = (ev) => {
+          if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', closeMenu); }
+        };
+        document.addEventListener('click', closeMenu);
+      }, 10);
+    }
+
+    function cancelReply() {
+      replyingTo = null;
+      replyPreviewBar.classList.add('hidden');
+    }
+    btnCancelReply.addEventListener('click', cancelReply);
+
+    btnServerHeaderInfo.addEventListener('click', abrirModalInfoServidor);
+    async function abrirModalInfoServidor() {
+      if (!currentServerId) return;
+      const sSnap = await getDoc(doc(db, "servers", currentServerId));
+      if (!sSnap.exists()) return;
+      activeServerData = sSnap.data();
+      serverInfoModalTitle.textContent = activeServerData.name;
+      serverInfoName.textContent = activeServerData.name;
+      serverInfoOwner.textContent = `Dono: @${activeServerData.owner}`;
+      serverInfoDescText.textContent = activeServerData.description || 'Sem descrição.';
+      modalServerInviteLink.textContent = `starcord.gg/${activeServerData.inviteCode}`;
+      serverMemberCount.textContent = activeServerData.members.length;
+      
+      if (activeServerData.iconUrl) { serverInfoModalAvatar.style.backgroundImage = `url(${activeServerData.iconUrl})`; serverInfoModalAvatar.textContent = ''; } else { serverInfoModalAvatar.style.backgroundImage = 'none'; serverInfoModalAvatar.textContent = activeServerData.name[0].toUpperCase(); }
+      
+      const isOwner = activeServerData.owner === currentUsername;
+      if (isOwner) {
+        btnSaveServerEdit.classList.remove('hidden'); editServerNameInput.classList.remove('hidden'); editServerDescInput.classList.remove('hidden'); editBannerColorSection.classList.remove('hidden'); serverInfoName.classList.add('hidden'); serverInfoDescText.classList.add('hidden');
+        editServerNameInput.value = activeServerData.name; editServerDescInput.value = activeServerData.description || '';
+        editSelectedBannerColor = activeServerData.bannerColor || '#000000';
+        document.getElementById('previewColorEdit').style.backgroundColor = editSelectedBannerColor;
+        document.getElementById('txtColorEdit').textContent = editSelectedBannerColor;
+        btnLeaveOrDeleteServer.textContent = "Excluir Servidor";
+      } else {
+        btnSaveServerEdit.classList.add('hidden'); editServerNameInput.classList.add('hidden'); editServerDescInput.classList.add('hidden'); editBannerColorSection.classList.add('hidden'); serverInfoName.classList.remove('hidden'); serverInfoDescText.classList.remove('hidden');
+        btnLeaveOrDeleteServer.textContent = "Sair do Servidor";
+      }
+      
+      serverMembersListContainer.innerHTML = '';
+      for (const mUser of activeServerData.members) {
+        const mProfile = await getProfileCached(mUser), mRow = document.createElement('div');
+        mRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 6px 10px; border-radius: 8px;";
+        let mAvatar = mProfile.avatarUrl ? `<div class="friend-avatar" style="width:28px;height:28px;background-image:url('${mProfile.avatarUrl}')"></div>` : `<div class="friend-avatar" style="width:28px;height:28px;font-size:11px;">${(mProfile.displayName||mUser)[0].toUpperCase()}</div>`;
+        let actionHtml = '';
+        if (isOwner && mUser !== currentUsername) actionHtml = `<button class="btn" style="background:#ff4d4d; padding:4px 8px; font-size:10px;" data-kick="${mUser}">Expulsar</button>`;
+        else if (mUser === activeServerData.owner) actionHtml = `<span style="font-size:10px; color:var(--accent-red); font-weight:700;">DONO</span>`;
+        mRow.innerHTML = `<div style="display: flex; align-items: center; gap: 8px;">${mAvatar}<span style="font-size: 12px; font-weight: 600;">${mProfile.displayName || mUser} (@${mUser})</span></div>${actionHtml}`;
+        if (isOwner && mUser !== currentUsername) {
+          mRow.querySelector('button').addEventListener('click', async () => {
+            if (confirm(`Deseja expulsar @${mUser} do servidor?`)) {
+              await updateDoc(doc(db, "servers", currentServerId), { members: arrayRemove(mUser) });
+              showToast(`@${mUser} foi expulso.`);
+              abrirModalInfoServidor();
+            }
+          });
+        }
+        serverMembersListContainer.appendChild(mRow);
+      }
+      serverInfoModal.classList.remove('hidden');
+    }
+
+    btnCloseServerInfoModal.addEventListener('click', () => {
+      serverInfoModal.classList.add('hidden');
+    });
+
+    btnSaveServerEdit.addEventListener('click', async () => {
+      if (!currentServerId) return;
+      const newName = editServerNameInput.value.trim();
+      const newDesc = editServerDescInput.value.trim();
+      try {
+        await updateDoc(doc(db, "servers", currentServerId), {
+          name: newName || activeServerData.name,
+          description: newDesc,
+          bannerColor: editSelectedBannerColor
+        });
+        showToast('Servidor atualizado com sucesso!', 'success');
+        serverInfoModal.classList.add('hidden');
+        abrirServidorChat(currentServerId);
+      } catch (err) {
+        showToast('Erro ao atualizar servidor: ' + err.message);
+      }
+    });
+
+    btnOpenInviteMore.addEventListener('click', () => {
+      serverInfoModal.classList.add('hidden');
+      abrirModalConvidarAmigos(currentServerId, activeServerData.inviteCode);
+    });
+
+    btnLeaveOrDeleteServer.addEventListener('click', async () => {
+      if (!currentServerId) return;
+      const isOwner = activeServerData.owner === currentUsername;
+      if (isOwner) {
+        if (confirm('Tem certeza que deseja excluir este servidor permanentemente?')) {
+          try {
+            await deleteDoc(doc(db, "servers", currentServerId));
+            showToast('Servidor excluído.', 'success');
+            serverInfoModal.classList.add('hidden');
+            appScreen.classList.remove('chat-open');
+            currentServerId = null;
+            activeServerData = null;
+          } catch (err) {
+            showToast('Erro ao excluir: ' + err.message);
+          }
+        }
+      } else {
+        if (confirm('Deseja realmente sair deste servidor?')) {
+          try {
+            await updateDoc(doc(db, "servers", currentServerId), {
+              members: arrayRemove(currentUsername)
+            });
+            showToast('Você saiu do servidor.', 'success');
+            serverInfoModal.classList.add('hidden');
+            appScreen.classList.remove('chat-open');
+            currentServerId = null;
+            activeServerData = null;
+          } catch (err) {
+            showToast('Erro ao sair: ' + err.message);
+          }
+        }
+      }
+    });
+
+    // ===== SERVIDORES - ÍCONES MAIORES =====
+    function carregarServidores() {
+      onSnapshot(collection(db, "servers"), (snapshot) => {
+        serversList.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const sData = docSnap.data(), sId = docSnap.id;
+          if (sData.members && sData.members.includes(currentUsername)) {
+            const item = document.createElement('div');
+            item.classList.add('server-item');
+            item.innerHTML = `
+              <div class="server-avatar" ${sData.iconUrl ? `style="background-image: url('${sData.iconUrl}')"` : ''}>${sData.iconUrl ? '' : sData.name[0].toUpperCase()}</div>
+              <div class="server-details">
+                <div class="server-name">${sData.name}</div>
+                <div class="server-sub">${sData.members.length} membro(s)</div>
+              </div>
+            `;
+            item.addEventListener('click', () => abrirServidorChat(sId));
+            serversList.appendChild(item);
+          }
+        });
+      });
+    }
+
+    async function abrirServidorChat(serverId) {
+      currentServerId = serverId; targetUsername = null; btnServerHeaderInfo.classList.remove('hidden');
+      atualizarBotoesChamada();
+      const sSnap = await getDoc(doc(db, "servers", serverId));
+      if (!sSnap.exists()) return;
+      activeServerData = sSnap.data();
+      chatTargetTitle.textContent = activeServerData.name;
+      chatTargetHandle.textContent = `Servidor • ${activeServerData.members.length} membros`;
+      if (activeServerData.iconUrl) { chatAvatar.style.backgroundImage = `url(${activeServerData.iconUrl})`; chatAvatar.textContent = ''; } else { chatAvatar.style.backgroundImage = 'none'; chatAvatar.textContent = activeServerData.name[0].toUpperCase(); }
+      appScreen.classList.add('chat-open'); carregarMensagensServidor(serverId);
+    }
+
+    // ===== CRIAR SERVIDOR =====
+    btnOpenCreateServer.addEventListener('click', () => {
+      inputServerName.value = `Servidor de ${currentUsername}`; inputServerDesc.value = 'Bem-vindo ao nosso servidor!';
+      tempServerAvatarBase64 = null; selectedBannerColor = '#000000';
+      document.getElementById('previewColorCreate').style.backgroundColor = selectedBannerColor;
+      document.getElementById('txtColorCreate').textContent = selectedBannerColor;
+      serverIconPickerLabel.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>ENVIAR</span><input type="file" id="serverAvatarFileInput" accept="image/*" />`;
+      document.getElementById('serverAvatarFileInput').addEventListener('change', (e) => { activeCropTarget = 'server'; handleImageSelect(e); });
+      createServerModal.classList.remove('hidden');
+    });
+
+    btnCloseCreateServer.addEventListener('click', () => { createServerModal.classList.add('hidden'); });
+    let newlyCreatedServerId = null, newlyCreatedInviteCode = null;
+
+    btnConfirmCreateServer.addEventListener('click', async () => {
+      const name = inputServerName.value.trim() || `Servidor de ${currentUsername}`, desc = inputServerDesc.value.trim(), inviteCode = Math.random().toString(36).substring(2, 10);
+      btnConfirmCreateServer.disabled = true;
+      try {
+        const serverRef = doc(collection(db, "servers"));
+        await setDoc(serverRef, { name, description: desc, iconUrl: tempServerAvatarBase64 || '', bannerColor: selectedBannerColor, owner: currentUsername, inviteCode, members: [currentUsername], createdAt: serverTimestamp() });
+        newlyCreatedServerId = serverRef.id; newlyCreatedInviteCode = inviteCode;
+        createServerModal.classList.add('hidden'); abrirModalConvidarAmigos(newlyCreatedServerId, inviteCode); showToast('Servidor criado com sucesso!', 'success');
+      } catch (err) { showToast('Erro ao criar servidor: ' + err.message); } finally { btnConfirmCreateServer.disabled = false; }
+    });
+
+    function abrirModalConvidarAmigos(serverId, inviteCode) { txtInviteLink.textContent = `starcord.gg/${inviteCode}`; carregarListaAmigosParaConvite(serverId); inviteFriendsModal.classList.remove('hidden'); }
+    btnCloseInviteModal.addEventListener('click', () => { inviteFriendsModal.classList.add('hidden'); if (newlyCreatedServerId) abrirServidorChat(newlyCreatedServerId); });
+    btnCopyInviteLink.addEventListener('click', () => { navigator.clipboard.writeText(txtInviteLink.textContent); showToast('Link copiado!', 'success'); });
+
+    async function carregarListaAmigosParaConvite(serverId) {
+      inviteFriendsListContainer.innerHTML = '';
+      onSnapshot(collection(db, "users", currentUsername, "friends"), async (snapshot) => {
+        inviteFriendsListContainer.innerHTML = '';
+        if (snapshot.empty) { inviteFriendsListContainer.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhum amigo na lista.</div>'; return; }
+        for (const docSnap of snapshot.docs) {
+          const fUser = docSnap.id, pData = await getProfileCached(fUser);
+          const row = document.createElement('div'); row.className = 'invite-friend-row';
+          row.innerHTML = `<div style="display:flex; align-items:center; gap:10px;">${pData.avatarUrl ? `<div class="friend-avatar" style="background-image:url('${pData.avatarUrl}')"></div>` : `<div class="friend-avatar">${(pData.displayName||fUser)[0].toUpperCase()}</div>`}<div><div style="font-size:13px; font-weight:600;">${pData.displayName || fUser}</div><div style="font-size:11px; color:var(--text-muted);">@${fUser}</div></div></div><button class="btn" style="padding:6px 12px; font-size:11px;">Convidar</button>`;
+          row.querySelector('button').addEventListener('click', async (e) => {
+            e.target.disabled = true; e.target.textContent = 'Enviado';
+            const roomId = [currentUsername, fUser].sort().join('_'), myProfile = await getProfileCached(currentUsername);
+            await addDoc(collection(db, "chats", roomId, "messages"), { text: `Ei! Entre no meu servidor do Starcord: starcord.gg/${newlyCreatedInviteCode}`, fileUrl: null, sender: currentUsername, senderDisplayName: myProfile.displayName || currentUsername, senderAvatar: myProfile.avatarUrl || '', timestamp: serverTimestamp() });
+            showToast(`Convite enviado para @${fUser}!`, 'success');
+          });
+          inviteFriendsListContainer.appendChild(row);
+        }
+      });
+    }
+
+    // ===== AMIGOS =====
+    btnAddFriend.addEventListener('click', async () => {
+      const fName = cleanUsername(friendUsernameInput.value);
+      if (!fName) return;
+      if (fName === currentUsername) {
+        showToast('Você não pode adicionar a si mesmo.');
+        return;
+      }
+      try {
+        const pSnap = await getDoc(doc(db, "profiles", fName));
+        if (!pSnap.exists()) {
+          showToast('Usuário não encontrado.');
+          return;
+        }
+        await setDoc(doc(db, "users", currentUsername, "friends", fName), { username: fName });
+        friendUsernameInput.value = '';
+        showToast(`@${fName} adicionado aos amigos!`, 'success');
+        carregarAmigos();
+      } catch (err) {
+        showToast('Erro ao adicionar amigo: ' + err.message);
+      }
+    });
+
+    function carregarAmigos() {
+      onSnapshot(collection(db, "users", currentUsername, "friends"), async (snapshot) => {
+        // Atualizar strip de avatares
+        friendsAvatarStrip.innerHTML = '';
+        const friends = [];
+        for (const docSnap of snapshot.docs) {
+          const fUser = docSnap.id;
+          const pData = await getProfileCached(fUser);
+          friends.push({ username: fUser, ...pData });
+        }
+        
+        // Mostrar apenas os primeiros 4 avatares
+        friends.slice(0, 4).forEach(f => {
+          const av = document.createElement('div');
+          av.className = 'strip-avatar';
+          if (f.avatarUrl) av.style.backgroundImage = `url('${f.avatarUrl}')`;
+          else av.textContent = (f.displayName || f.username)[0].toUpperCase();
+          av.title = f.displayName || f.username;
+          av.addEventListener('click', () => abrirChatAmigo(f.username));
+          friendsAvatarStrip.appendChild(av);
+        });
+        
+        if (friends.length === 0) {
+          friendsAvatarStrip.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:4px 0;">Nenhum amigo</div>';
+        }
+      });
+    }
+
+    function abrirChatAmigo(fUser) {
+      targetUsername = fUser;
+      currentServerId = null;
+      activeServerData = null;
+      btnServerHeaderInfo.classList.add('hidden');
+      atualizarBotoesChamada();
+      chatTargetTitle.textContent = `@${fUser}`;
+      chatTargetHandle.textContent = 'Clique para ver o perfil';
+      getProfileCached(fUser).then(pData => {
+        chatTargetTitle.textContent = pData.displayName || `@${fUser}`;
+        if (pData.avatarUrl) {
+          chatAvatar.style.backgroundImage = `url(${pData.avatarUrl})`;
+          chatAvatar.textContent = '';
+        } else {
+          chatAvatar.style.backgroundImage = 'none';
+          chatAvatar.textContent = fUser[0].toUpperCase();
+        }
+      });
+      appScreen.classList.add('chat-open');
+      carregarMensagensChat(fUser);
+    }
+
+    function carregarMensagensChat(fUser) {
+      chatMessages.innerHTML = '';
+      const roomId = [currentUsername, fUser].sort().join('_');
+      const q = query(collection(db, "chats", roomId, "messages"), orderBy("timestamp", "asc"));
+      if (unsubscribeMessages) unsubscribeMessages();
+      unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+        chatMessages.innerHTML = '';
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          const msgId = docSnap.id;
+          let name = data.senderDisplayName, avatar = data.senderAvatar;
+          if (!name || avatar === undefined) {
+            const p = await getProfileCached(data.sender);
+            name = p.displayName || data.sender;
+            avatar = p.avatarUrl || '';
+          }
+          let hora = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          const row = document.createElement('div');
+          row.classList.add('chat-message-row');
+          row.dataset.msgId = msgId;
+          row.dataset.sender = data.sender;
+          
+          const avatarDiv = document.createElement('div');
+          avatarDiv.className = 'chat-msg-avatar';
+          if (avatar) avatarDiv.style.backgroundImage = `url('${avatar}')`;
+          else avatarDiv.textContent = name ? name[0].toUpperCase() : '?';
+          avatarDiv.addEventListener('click', () => abrirPerfilDeUsuario(data.sender));
+          
+          const bodyDiv = document.createElement('div');
+          bodyDiv.className = 'chat-msg-body';
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'chat-msg-header';
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'chat-msg-name';
+          nameSpan.textContent = name;
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'chat-msg-time';
+          timeSpan.textContent = hora;
+          headerDiv.appendChild(nameSpan);
+          headerDiv.appendChild(timeSpan);
+          bodyDiv.appendChild(headerDiv);
+          
+          renderMessageContent(data, bodyDiv, msgId);
+          
+          row.appendChild(avatarDiv);
+          row.appendChild(bodyDiv);
+          chatMessages.appendChild(row);
+          
+          row.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            mostrarMenuContexto(e, data, msgId);
+          });
+          let pressTimer;
+          row.addEventListener('touchstart', (e) => {
+            pressTimer = setTimeout(() => {
+              mostrarMenuContexto(e.touches[0], data, msgId);
+            }, 600);
+          });
+          row.addEventListener('touchend', () => clearTimeout(pressTimer));
+          row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+
+    // ===== ENVIO DE TEXTO =====
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      if (!text) return;
+      messageInput.value = '';
+      try {
+        const myProfile = await getProfileCached(currentUsername);
+        const msgData = {
+          text: text,
+          fileUrl: null,
+          sender: currentUsername,
+          senderDisplayName: myProfile.displayName || currentUsername,
+          senderAvatar: myProfile.avatarUrl || '',
+          timestamp: serverTimestamp()
+        };
+        
+        if (replyingTo) {
+          msgData.replyTo = replyingTo;
+          cancelReply();
+        }
+        
+        if (currentServerId) {
+          await addDoc(collection(db, "servers", currentServerId, "messages"), msgData);
+        } else if (targetUsername) {
+          const roomId = [currentUsername, targetUsername].sort().join('_');
+          await addDoc(collection(db, "chats", roomId, "messages"), msgData);
+        }
+      } catch (err) {
+        showToast('Erro ao enviar mensagem: ' + err.message);
+      }
+    });
+
+    // ===== CHAMADAS =====
+    const btnVoiceCall = document.getElementById('btnVoiceCall');
+    const btnVideoCall = document.getElementById('btnVideoCall');
+    const callModal = document.getElementById('callModal');
+    const incomingCallModal = document.getElementById('incomingCallModal');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const localVideo = document.getElementById('localVideo');
+    const remotePlaceholder = document.getElementById('remotePlaceholder');
+    const callRemoteAvatar = document.getElementById('callRemoteAvatar');
+    const callRemoteName = document.getElementById('callRemoteName');
+    const callStatusText = document.getElementById('callStatusText');
+    const callTimer = document.getElementById('callTimer');
+    const callTypeLabel = document.getElementById('callTypeLabel');
+    const btnToggleMic = document.getElementById('btnToggleMic');
+    const iconMicOn = document.getElementById('iconMicOn');
+    const iconMicOff = document.getElementById('iconMicOff');
+    const btnToggleCam = document.getElementById('btnToggleCam');
+    const iconCamOn = document.getElementById('iconCamOn');
+    const iconCamOff = document.getElementById('iconCamOff');
+    const btnEndCall = document.getElementById('btnEndCall');
+    const incomingCallAvatar = document.getElementById('incomingCallAvatar');
+    const incomingCallName = document.getElementById('incomingCallName');
+    const incomingCallType = document.getElementById('incomingCallType');
+    const btnAcceptCall = document.getElementById('btnAcceptCall');
+    const btnRejectCall = document.getElementById('btnRejectCall');
+
+    let localStream = null, callTimerInterval = null, callSeconds = 0;
+    let isMicMuted = false, isCamOff = false, activeCallId = null;
+    let globalCallListenerUnsub = null;
+
+    function atualizarBotoesChamada() {
+      if (currentServerId) {
+        btnVoiceCall.disabled = true;
+        btnVideoCall.disabled = true;
+      } else {
+        btnVoiceCall.disabled = false;
+        btnVideoCall.disabled = false;
+      }
+    }
+
+    btnVoiceCall.addEventListener('click', () => iniciarChamada('voz'));
+    btnVideoCall.addEventListener('click', () => iniciarChamada('video'));
+
+    async function iniciarChamada(tipo) {
+      if (!targetUsername) return;
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: tipo === 'video' });
+        localVideo.srcObject = localStream;
+        if (tipo === 'voz') localVideo.classList.add('hidden'); else localVideo.classList.remove('hidden');
+      } catch (e) {
+        showToast('Erro ao acessar microfone/câmera.');
+        return;
+      }
+
+      callTypeLabel.textContent = tipo === 'video' ? 'Chamada de vídeo' : 'Chamada de voz';
+      const pData = await getProfileCached(targetUsername);
+      callRemoteName.textContent = pData.displayName || targetUsername;
+      if (pData.avatarUrl) {
+        callRemoteAvatar.style.backgroundImage = `url(${pData.avatarUrl})`;
+        callRemoteAvatar.textContent = '';
+      } else {
+        callRemoteAvatar.style.backgroundImage = 'none';
+        callRemoteAvatar.textContent = targetUsername[0].toUpperCase();
+      }
+      callStatusText.textContent = 'Chamando...';
+      remotePlaceholder.classList.remove('hidden');
+      remoteVideo.classList.add('hidden');
+      callModal.classList.remove('hidden');
+
+      const callRef = await addDoc(collection(db, "calls"), {
+        caller: currentUsername,
+        receiver: targetUsername,
+        type: tipo,
+        status: 'ringing',
+        timestamp: serverTimestamp()
+      });
+      activeCallId = callRef.id;
+
+      setTimeout(() => {
+        if (callModal.classList.contains('hidden')) return;
+        callStatusText.textContent = 'Conectado';
+        remotePlaceholder.classList.add('hidden');
+        if (tipo === 'video') remoteVideo.classList.remove('hidden');
+        iniciarTimerChamada();
+      }, 3000);
+    }
+
+    function iniciarEscutaChamadas() {
+      if (globalCallListenerUnsub) globalCallListenerUnsub();
+      const q = query(collection(db, "calls"), where("receiver", "==", currentUsername), where("status", "==", "ringing"));
+      globalCallListenerUnsub = onSnapshot(q, async (snapshot) => {
+        if (!snapshot.empty) {
+          const callDoc = snapshot.docs[0];
+          const callData = callDoc.data();
+          activeCallId = callDoc.id;
+          const callerProfile = await getProfileCached(callData.caller);
+          incomingCallName.textContent = callerProfile.displayName || callData.caller;
+          incomingCallType.textContent = callData.type === 'video' ? 'Chamada de vídeo recebida...' : 'Chamada de voz recebida...';
+          if (callerProfile.avatarUrl) {
+            incomingCallAvatar.style.backgroundImage = `url(${callerProfile.avatarUrl})`;
+            incomingCallAvatar.textContent = '';
+          } else {
+            incomingCallAvatar.style.backgroundImage = 'none';
+            incomingCallAvatar.textContent = callData.caller[0].toUpperCase();
+          }
+          incomingCallModal.classList.remove('hidden');
+        }
+      });
+    }
+
+    btnAcceptCall.addEventListener('click', async () => {
+      incomingCallModal.classList.add('hidden');
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        localVideo.srcObject = localStream;
+        localVideo.classList.remove('hidden');
+      } catch (e) {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localVideo.classList.add('hidden');
+      }
+      callTypeLabel.textContent = 'Chamada ativa';
+      callRemoteName.textContent = 'Conectado';
+      remotePlaceholder.classList.add('hidden');
+      callModal.classList.remove('hidden');
+      iniciarTimerChamada();
+      if (activeCallId) {
+        await updateDoc(doc(db, "calls", activeCallId), { status: 'accepted' });
+      }
+    });
+
+    btnRejectCall.addEventListener('click', async () => {
+      incomingCallModal.classList.add('hidden');
+      if (activeCallId) {
+        await updateDoc(doc(db, "calls", activeCallId), { status: 'rejected' });
+        activeCallId = null;
+      }
+    });
+
+    function iniciarTimerChamada() {
+      callSeconds = 0;
+      callTimer.textContent = '00:00';
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        let m = Math.floor(callSeconds / 60).toString().padStart(2, '0');
+        let s = (callSeconds % 60).toString().padStart(2, '0');
+        callTimer.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    btnToggleMic.addEventListener('click', () => {
+      if (!localStream) return;
+      isMicMuted = !isMicMuted;
+      localStream.getAudioTracks().forEach(track => track.enabled = !isMicMuted);
+      if (isMicMuted) {
+        iconMicOn.classList.add('hidden');
+        iconMicOff.classList.remove('hidden');
+        btnToggleMic.classList.add('off');
+      } else {
+        iconMicOn.classList.remove('hidden');
+        iconMicOff.classList.add('hidden');
+        btnToggleMic.classList.remove('off');
+      }
+    });
+
+    btnToggleCam.addEventListener('click', () => {
+      if (!localStream) return;
+      isCamOff = !isCamOff;
+      localStream.getVideoTracks().forEach(track => track.enabled = !isCamOff);
+      if (isCamOff) {
+        iconCamOn.classList.add('hidden');
+        iconCamOff.classList.remove('hidden');
+        btnToggleCam.classList.add('off');
+        localVideo.classList.add('hidden');
+      } else {
+        iconCamOn.classList.remove('hidden');
+        iconCamOff.classList.add('hidden');
+        btnToggleCam.classList.remove('off');
+        localVideo.classList.remove('hidden');
+      }
+    });
+
+    btnEndCall.addEventListener('click', () => {
+      encerrarChamada();
+    });
+
+    function encerrarChamada() {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+      }
+      callModal.classList.add('hidden');
+      incomingCallModal.classList.add('hidden');
+      isMicMuted = false;
+      isCamOff = false;
+      iconMicOn.classList.remove('hidden');
+      iconMicOff.classList.add('hidden');
+      btnToggleMic.classList.remove('off');
+      iconCamOn.classList.remove('hidden');
+      iconCamOff.classList.add('hidden');
+      btnToggleCam.classList.remove('off');
+      if (activeCallId) {
+        updateDoc(doc(db, "calls", activeCallId), { status: 'ended' }).catch(() => {});
+        activeCallId = null;
+      }
+    }
+  </script>
+</body>
+</html>
