@@ -30,9 +30,12 @@ jobs:
           rm -rf android
           npx cap add android
 
-      - name: Copy Root res/ Folder to Android Project
+      - name: Copy Root res/ Folder and Fix Icons
         run: |
           if [ -d "res" ]; then
+            echo "Removendo ícones adaptativos padrão do Capacitor para evitar conflito..."
+            rm -rf android/app/src/main/res/mipmap-anydpi-v26
+            
             echo "Copiando pasta res/ da raiz para o projeto Android..."
             cp -r res/* android/app/src/main/res/
           else
