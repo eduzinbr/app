@@ -30,11 +30,20 @@ jobs:
           rm -rf android
           npx cap add android
 
+      - name: Copy Root res/ Folder to Android Project
+        run: |
+          if [ -d "res" ]; then
+            echo "Copiando pasta res/ da raiz para o projeto Android..."
+            cp -r res/* android/app/src/main/res/
+          else
+            echo "Pasta res/ não encontrada na raiz, ignorando..."
+          fi
+
       - name: Inject Custom Kotlin Files
         run: |
           mkdir -p android/app/src/main/java/com/starcord/app
 
-          # Cria o MainActivity.kt otimizado para WebView e Permissões Nativas
+          # Cria o MainActivity.kt completo com tratamento de permissões e WebChromeClient
           cat << 'EOF' > android/app/src/main/java/com/starcord/app/MainActivity.kt
           package com.starcord.app
 
@@ -80,26 +89,34 @@ jobs:
                       val allGranted = permissions.entries.all { it.value }
                       if (allGranted) {
                           criarPastaMidiaStarCord()
-                          Toast.makeText(this, "Permissões concedidas!", Toast.LENGTH_SHORT).show()
+                          Toast.makeText(this, "Permissões concedidas com sucesso!", Toast.LENGTH_SHORT).show()
                       } else {
-                          Toast.makeText(this, "Algumas permissões foram negadas.", Toast.LENGTH_SHORT).show()
+                          Toast.makeText(this, "Permissões negadas. Ative nas Configurações do App.", Toast.LENGTH_LONG).show()
                       }
                   }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   
-                  // Permite que a WebView processe os pedidos de mídia do site
                   bridge.webView.webChromeClient = object : WebChromeClient() {
                       override fun onPermissionRequest(request: PermissionRequest?) {
-                          request?.grant(request.resources)
+                          val hasCamera = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                          val hasAudio = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+                          if (hasCamera || hasAudio) {
+                              request?.grant(request.resources)
+                          } else {
+                              request?.deny()
+                              runOnUiThread { verificarESolicitarPermissoes() }
+                          }
                       }
                   }
 
                   bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
-
-                  // Solicita as permissões nativas logo na inicialização
-                  verificarESolicitarPermissoes()
+                  
+                  bridge.webView.postDelayed({
+                      verificarESolicitarPermissoes()
+                  }, 800)
               }
 
               private fun verificarESolicitarPermissoes() {
@@ -146,6 +163,16 @@ jobs:
                   fun requestMediaPermissions() {
                       activity.runOnUiThread {
                           activity.verificarESolicitarPermissoes()
+                      }
+                  }
+
+                  @JavascriptInterface
+                  fun openAppSettings() {
+                      activity.runOnUiThread {
+                          val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                              data = Uri.parse("package:${activity.packageName}")
+                          }
+                          activity.startActivity(intent)
                       }
                   }
               }
@@ -257,3 +284,4 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
