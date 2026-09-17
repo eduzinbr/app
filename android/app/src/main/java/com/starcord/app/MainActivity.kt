@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.getcapacitor.BridgeActivity
@@ -46,11 +48,21 @@ class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Injetando ponte JavaScript na WebView do Capacitor
+        // 1. Libera o acesso de Câmera e Microfone dentro da WebView do Capacitor
+        bridge.webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                // Concede automaticamente a permissão solicitada pelo site/app web
+                request?.grant(request.resources)
+            }
+        }
+
+        // 2. Injeta a ponte JavaScript
         bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
 
-        // Solicita permissões e cria a pasta ao abrir o app
-        verificarESolicitarPermissoes()
+        // 3. Solicita as permissões nativas após um pequeno delay para garantir que a UI carregou
+        bridge.webView.postDelayed({
+            verificarESolicitarPermissoes()
+        }, 1000)
     }
 
     private fun verificarESolicitarPermissoes() {
@@ -66,7 +78,6 @@ class MainActivity : BridgeActivity() {
     }
 
     private fun criarPastaMidiaStarCord() {
-        // Cria a pasta: Android/data/com.starcord.app/files/midia/starcord/
         val mediaDir = File(getExternalFilesDir(null), "midia/starcord")
         if (!mediaDir.exists()) {
             mediaDir.mkdirs()
@@ -90,7 +101,15 @@ class MainActivity : BridgeActivity() {
             if (Settings.canDrawOverlays(activity)) {
                 val intent = Intent(activity, FloatingService::class.java)
                 activity.startService(intent)
-                activity.finishAffinity() // Sai do app e mantém o flutuante ativo
+                activity.finishAffinity()
+            }
+        }
+
+        // Permite que o seu código JavaScript chame o pedido de permissões a qualquer momento
+        @JavascriptInterface
+        fun requestMediaPermissions() {
+            activity.runOnUiThread {
+                activity.verificarESolicitarPermissoes()
             }
         }
     }
