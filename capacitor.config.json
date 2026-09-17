@@ -1,6 +1,6 @@
 {
-  "appId": "com.starcord.app",
-  "appName": "StarCord",
+  "appId": "com.tchess.app",
+  "appName": "The Chess",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
