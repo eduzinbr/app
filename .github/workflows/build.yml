@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p android/app/src/main/java/com/starcord/app
 
-          # Cria o MainActivity.kt com permissões e criação de pasta
+          # Cria o MainActivity.kt completo com tratamento de permissões e WebChromeClient
           cat << 'EOF' > android/app/src/main/java/com/starcord/app/MainActivity.kt
           package com.starcord.app
 
@@ -46,6 +46,9 @@ jobs:
           import android.os.Bundle
           import android.provider.Settings
           import android.webkit.JavascriptInterface
+          import android.webkit.PermissionRequest
+          import android.webkit.WebChromeClient
+          import android.widget.Toast
           import androidx.activity.result.contract.ActivityResultContracts
           import androidx.core.content.ContextCompat
           import com.getcapacitor.BridgeActivity
@@ -77,13 +80,34 @@ jobs:
                       val allGranted = permissions.entries.all { it.value }
                       if (allGranted) {
                           criarPastaMidiaStarCord()
+                          Toast.makeText(this, "Permissões concedidas com sucesso!", Toast.LENGTH_SHORT).show()
+                      } else {
+                          Toast.makeText(this, "Permissões negadas. Ative nas Configurações do App.", Toast.LENGTH_LONG).show()
                       }
                   }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
+                  
+                  bridge.webView.webChromeClient = object : WebChromeClient() {
+                      override fun onPermissionRequest(request: PermissionRequest?) {
+                          val hasCamera = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                          val hasAudio = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+                          if (hasCamera || hasAudio) {
+                              request?.grant(request.resources)
+                          } else {
+                              request?.deny()
+                              runOnUiThread { verificarESolicitarPermissoes() }
+                          }
+                      }
+                  }
+
                   bridge.webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
-                  verificarESolicitarPermissoes()
+                  
+                  bridge.webView.postDelayed({
+                      verificarESolicitarPermissoes()
+                  }, 800)
               }
 
               private fun verificarESolicitarPermissoes() {
@@ -123,6 +147,23 @@ jobs:
                           val intent = Intent(activity, FloatingService::class.java)
                           activity.startService(intent)
                           activity.finishAffinity()
+                      }
+                  }
+
+                  @JavascriptInterface
+                  fun requestMediaPermissions() {
+                      activity.runOnUiThread {
+                          activity.verificarESolicitarPermissoes()
+                      }
+                  }
+
+                  @JavascriptInterface
+                  fun openAppSettings() {
+                      activity.runOnUiThread {
+                          val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                              data = Uri.parse("package:${activity.packageName}")
+                          }
+                          activity.startActivity(intent)
                       }
                   }
               }
@@ -234,4 +275,3 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
